@@ -50,7 +50,7 @@ public class Workflow {
 				}
 			}
 			if(!host_exists) throw new CustomException("The host id for the stage " + s.getId() + " does not exist in the list of hosts");
-			String envId = s.getEnvironmentId();
+			String envId = s.getEnvironmentId().split("#")[1];
 			if(envId==null) throw new CustomException("The environmentId for the stage " + s.getId() + " is null");
 			boolean env_exists = false;
 			Environment e = null;
@@ -71,21 +71,23 @@ public class Workflow {
 			//if host_type==Cloud then nodes MUST contain information
 			List<Node> nodes = s.getNodes();
 			if(h.getType().equals("Cloud") && (nodes==null)) throw new CustomException("The cloud stage " + s.getId() + " does not contain info about the nodes");
-			for(int j=0; j<nodes.size(); j++){
-				Node node = nodes.get(j);
-				if(node.getNumNodes()==null) throw new CustomException("The number of nodes of node " + j + " for the stage " + s.getId() + " is null");
-				if(node.getCoresPerNode()==null) throw new CustomException("The cores per node of node " + j + " for the stage " + s.getId() + " is null");
-				if(node.getMemorySize()==null) throw new CustomException("The memory size of node " + j + " for the stage " + s.getId() + " is null");
-				//TODO: Check if MemorySize follows the pattern [1-9]+{m|g|t}
-				String pattern = "(0-9+)(m|g|t)";
-				if(!node.getMemorySize().matches(pattern)) throw new CustomException("The memory size of node " + j + " for the stage " + s.getId() + " has unknown format");
-				List<disk> disks = node.getDisks();
-				for(int k=0; k<disks.size(); k++){
-					disk d = disks.get(k);
-					if(d.getnDisk()==null) throw new CustomException("The disk id " + k + " of the node " + j + " for the stage " + s.getId() + " is null");
-					if(d.getDisksize()==null) throw new CustomException("The disk size of the disk " + k + " for the node " + j + " for the stage " + s.getId() + " is null");
-					//TODO: Check if diskSize follows the pattern [1-9]+{m|g|t}
-					if(!d.getDisksize().matches(pattern)) throw new CustomException("The disk size of the disk " + k + " for the node " + j + " for the stage " + s.getId() + " has unknown format");
+			if(h.getType().equals("Cloud")){
+				for(int j=0; j<nodes.size(); j++){
+					Node node = nodes.get(j);
+						if(node.getNumNodes()==null) throw new CustomException("The number of nodes of node " + j + " for the stage " + s.getId() + " is null");
+						if(node.getCoresPerNode()==null) throw new CustomException("The cores per node of node " + j + " for the stage " + s.getId() + " is null");
+						if(node.getMemorySize()==null) throw new CustomException("The memory size of node " + j + " for the stage " + s.getId() + " is null");
+						//TODO: Check if MemorySize follows the pattern [1-9]+{m|g|t}
+						String pattern = "(0-9+)(m|g|t)";
+						if(!node.getMemorySize().matches(pattern)) throw new CustomException("The memory size of node " + j + " for the stage " + s.getId() + " has unknown format");
+						List<disk> disks = node.getDisks();
+						for(int k=0; k<disks.size(); k++){
+							disk d = disks.get(k);
+							if(d.getnDisk()==null) throw new CustomException("The disk id " + k + " of the node " + j + " for the stage " + s.getId() + " is null");
+							if(d.getDisksize()==null) throw new CustomException("The disk size of the disk " + k + " for the node " + j + " for the stage " + s.getId() + " is null");
+							//TODO: Check if diskSize follows the pattern [1-9]+{m|g|t}
+							if(!d.getDisksize().matches(pattern)) throw new CustomException("The disk size of the disk " + k + " for the node " + j + " for the stage " + s.getId() + " has unknown format");
+						}
 				}
 			}
 			List<Execution> executions = s.getExecution();
