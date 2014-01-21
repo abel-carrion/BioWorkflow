@@ -37,7 +37,7 @@ public class Workflow {
 		for(int i=0; i<_stages.size(); i++){
 			Stage s = _stages.get(i);
 			if(s.getId()==null) throw new CustomException("The id for the stage " + i + " is null");
-			String hostId = s.getHostId();
+			String hostId = s.getHostId().split("#")[1];
 			if(hostId==null) throw new CustomException("The host id for the stage " + s.getId() + " is null");
 			//check if the host_id exists in the list of hosts
 			boolean host_exists = false;

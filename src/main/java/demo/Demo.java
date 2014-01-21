@@ -9,6 +9,7 @@ import org.jgrapht.demo.GraphPlotter;
 
 import enactor.Connector.PBS_Connector;
 import parsing.jackson.Workflow;
+import parsing.jackson.Workflow.CustomException;
 
 public class Demo {
 	
@@ -18,6 +19,11 @@ public class Demo {
 		try {
 			// JSON parsing
 			Workflow workflow = mapper.readValue(new File("first_workflow.json"), Workflow.class);
+			try {
+				workflow.validation();
+			} catch (CustomException e) {
+				System.out.println(e.getLocalizedMessage());
+			}
 			// Compilation from logical workflow to physical workflow
 			
 			// workflow representation
