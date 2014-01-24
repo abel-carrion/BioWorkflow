@@ -2,6 +2,8 @@ package core;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -13,11 +15,15 @@ import parsing.jackson.Workflow.CustomException;
 
 public class Demo {
 	
+	static final Logger logger = Logger.getLogger(Demo.class);
+	
 	public static void main(String[] args) {
+		
+		BasicConfigurator.configure();
 		
 		ObjectMapper mapper = new ObjectMapper(); // can reuse, share globally
 		try {
-			// JSON parsing
+			logger.debug("JSON parsing");
 			Workflow workflow = mapper.readValue(new File("first_workflow.json"), Workflow.class);
 			try {
 				workflow.validation();
