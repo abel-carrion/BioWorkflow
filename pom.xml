@@ -3,7 +3,15 @@
   <groupId>test</groupId>
   <artifactId>jackson</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  
+  <properties>
+ 	<slf4j.version>1.6.4</slf4j.version>
+ 	<logback.version>1.0.1</logback.version>
+  </properties>
+    
   <dependencies>
+  	
+  	<!-- PARSING -->
   	<dependency>
     	<groupId>org.codehaus.jackson</groupId>
     	<artifactId>jackson-mapper-asl</artifactId>
@@ -14,6 +22,8 @@
     	<artifactId>jackson-core-asl</artifactId>
     	<version>1.8.2</version>
 	</dependency>
+	
+	<!-- GRAPH -->
 	<dependency>
 		<groupId>net.sf.jgrapht</groupId>
 		<artifactId>jgrapht</artifactId>
@@ -24,6 +34,8 @@
 		<artifactId>jgraph</artifactId>
 		<version>5.13.0.0</version>
 	</dependency>
+	
+	<!-- CONNECTORS -->
 	<dependency>
 		<groupId>com.tupilabs</groupId>
 		<artifactId>pbs-java-api</artifactId>
@@ -33,6 +45,24 @@
 		<groupId>com.jcraft</groupId>
 		<artifactId>jsch</artifactId>
 		<version>0.1.47</version>
-	</dependency>                       
+	</dependency>
+	
+	<!-- LOGGING -->
+	<dependency>
+  		<groupId>org.slf4j</groupId>
+  		<artifactId>slf4j-api</artifactId>
+  		<version>${slf4j.version}</version>
+	</dependency>
+ 	<dependency>
+  		<groupId>ch.qos.logback</groupId>
+  		<artifactId>logback-classic</artifactId>
+  		<version>${logback.version}</version>
+ 	</dependency>
+ 	<dependency>
+  		<groupId>ch.qos.logback</groupId>
+  		<artifactId>logback-core</artifactId>
+  		<version>${logback.version}</version>
+ 	</dependency>
+ 	                              
   </dependencies>
 </project>
