@@ -78,7 +78,7 @@ public class Workflow {
 						if(node.getCoresPerNode()==null) throw new CustomException("The cores per node of node " + j + " for the stage " + s.getId() + " is null");
 						if(node.getMemorySize()==null) throw new CustomException("The memory size of node " + j + " for the stage " + s.getId() + " is null");
 						//TODO: Check if MemorySize follows the pattern [1-9]+{m|g|t}
-						String pattern = "(0-9+)(m|g|t)";
+						String pattern = "(\\d+)(m|g|t)";
 						if(!node.getMemorySize().matches(pattern)) throw new CustomException("The memory size of node " + j + " for the stage " + s.getId() + " has unknown format");
 						List<disk> disks = node.getDisks();
 						for(int k=0; k<disks.size(); k++){
@@ -103,7 +103,7 @@ public class Workflow {
 						List<StageOut> stageout = _stages.get(k).getStageOut();
 						if(!ref_exists){
 							for(int l=0; l<stageout.size(); l++){
-								if(stageout.get(l).equals(sgin.getId())){
+								if(stageout.get(l).get_id().equals(sgin.getId().split("#")[1])){
 									ref_exists = true;
 									break;
 								}
@@ -121,7 +121,7 @@ public class Workflow {
 			}
 			
 			//check stage-outs
-			if(s.getStageOut()==null) throw new CustomException("StageOut for " + s.getId() + " is null" );
+			if(s.getStageOut()==null) throw new CustomException("StageOut for " + s.getId() + " is null");
 			for(int j=0; j<s.getStageOut().size(); j++){
 				StageOut sgout = s.getStageOut().get(j);
 				if(sgout.get_id()==null) throw new CustomException("The stageout id " + j + " for the stage " + s.getId() + " is null");

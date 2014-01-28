@@ -2,12 +2,14 @@ package core;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jgrapht.demo.GraphPlotter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 
 import enactor.Connector.PBS_Connector;
 import parsing.jackson.Workflow;
@@ -15,17 +17,16 @@ import parsing.jackson.Workflow.CustomException;
 
 public class Demo {
 	
-	static final Logger logger = Logger.getLogger(Demo.class);
+	private static final Logger logger = LoggerFactory.getLogger(Demo.class);
 	
 	public static void main(String[] args) {
-		
-		BasicConfigurator.configure();
-		
 		ObjectMapper mapper = new ObjectMapper(); // can reuse, share globally
 		try {
-			logger.debug("JSON parsing");
+			
+			logger.debug("JSON parsing with Jackson library START");
 			Workflow workflow = mapper.readValue(new File("first_workflow.json"), Workflow.class);
-			try {
+			logger.debug("JSON parsing with Jackson library finished");
+			try {		
 				workflow.validation();
 			} catch (CustomException e) {
 				System.out.println(e.getLocalizedMessage());
@@ -40,7 +41,7 @@ public class Demo {
 			//PBS_Connector conn = new PBS_Connector(workflow.getHosts(),workflow.getEnvironments());
 			// Execution of the first stage of the workflow
 			//conn.submit(workflow.getStages()[0], workflow.getStages());
-			System.out.println("All working fine!!");
+			logger.debug("The execution of {} has finished correctly", Demo.class.getName());
 			
 		} catch (JsonParseException e) {
 			// TODO Auto-generated catch block

@@ -106,6 +106,21 @@ public abstract class Connector {
 		
 	}
 	
+	public static class IM_Connector extends Connector{
+		
+		public IM_Connector(Host[] h, Environment[] e) {
+			super(h, e);
+		}
+		
+		public String submit(Stage s, Stage[] sgs){
+			return "";
+		}
+		
+		public String job_status(String job_id){
+			return "";
+		}
+	}
+	
 }
 
 

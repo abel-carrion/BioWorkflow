@@ -2,7 +2,7 @@
 "hosts":[
 	{	
 		"hostId": "host1",
-   		"type": "LRMS",
+   		"type": "CLUSTER",
    		"subType": "PBS",
    		"hostName": "odin.itaca.upv.es",
    		"port": "22",
@@ -46,6 +46,7 @@
 {
 	"id" : "0-splitter",	
 	"hostId": "#host1",
+	"environmentId" : "#env2",
 	
 	"execution": [
     {
