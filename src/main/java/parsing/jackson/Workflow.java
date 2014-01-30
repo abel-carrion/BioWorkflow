@@ -1,5 +1,6 @@
 package parsing.jackson;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import parsing.jackson.Stage.Execution;
@@ -12,6 +13,8 @@ public class Workflow {
 	private List<Host> _hosts;
 	private List<Environment> _environments;
 	private List<Stage> _stages;
+	private List<StageIn> all_stageins = new ArrayList<StageIn>();
+	private List<StageOut> all_stageouts = new ArrayList<StageOut>();
 	
 	public List<Host> getHosts() { return _hosts; }
 	public List<Environment> getEnvironments() { return _environments; }
@@ -24,6 +27,14 @@ public class Workflow {
 	}
 	public void setStages(List<Stage> stages) {
 		this._stages = stages;
+	}
+	
+	public void create_stageLists(){
+		for(int i=0; i<_stages.size(); i++){
+			Stage s = _stages.get(i);
+			all_stageins.addAll(s.getStagein());
+			all_stageouts.addAll(s.getStageOut());
+		}
 	}
 	
 	public class CustomException extends Exception {
@@ -93,23 +104,19 @@ public class Workflow {
 			List<Execution> executions = s.getExecution();
 			if(executions==null) throw new CustomException("At least one execution must be specified for the stage " + s.getId());
 			
+			
+			this.create_stageLists();
 			//check stage-ins
 			for(int j=0; j<s.getStagein().size(); j++){
 				StageIn sgin = s.getStagein().get(j);
 				if(sgin.getId()==null) throw new CustomException("The stagein " + j + " for the stage " + s.getId() + " is null");
 				if(sgin.getId().contains("#")){ //is a reference
 					boolean ref_exists = false;
-					for(int k=0; k<_stages.size(); k++){
-						List<StageOut> stageout = _stages.get(k).getStageOut();
-						if(!ref_exists){
-							for(int l=0; l<stageout.size(); l++){
-								if(stageout.get(l).get_id().equals(sgin.getId().split("#")[1])){
-									ref_exists = true;
-									break;
-								}
-							}
+					for(int k=0; k<all_stageouts.size(); k++){
+						if(all_stageouts.get(k).get_id().equals(sgin.getId().split("#")[1])){
+							ref_exists = true;
+							break;
 						}
-						else break;
 					}
 					if(!ref_exists) throw new CustomException("Stagein reference with id " + sgin.getId() + " cannot be found" );
 				}
@@ -128,9 +135,37 @@ public class Workflow {
 				if(sgout.getFile()==null) throw new CustomException("The stageout file " + j + " for the stage " + s.getId() + " is null");
 				if(sgout.getType()==null) throw new CustomException("The stageout type " + j + " for the stage " + s.getId() + " is null");
 			}
-		}
-		
+		}	
 	}
 	
-
+	public void instantiate_arguments() {
+		//Method that instantiates static argument references
+		for(int i=0; i<_stages.size(); i++){
+			Stage s = _stages.get(i);
+			for(int j=0; j<s.getExecution().size(); j++){
+				Execution e = s.getExecution().get(j);
+				if(e.getArguments().contains("#")){ //There is a reference
+					String[] args = e.getArguments().split(" ");
+					for(int k=0; k<args.length; k++){
+						if(args[k].contains("#")){
+							String ref = args[k].split("#")[1];
+							if(ref.contains("input")){ //We look for the inputs
+								for(int l=0; l<all_stageins.size(); l++){
+									StageIn sgin = all_stageins.get(l);
+									if(sgin.getURI()!=null){
+										
+									}
+								}
+							}
+							else{ //We look for the outputs
+								
+							}
+						}
+					}
+				}
+		}
+	}
+	
+	
+	
 }
