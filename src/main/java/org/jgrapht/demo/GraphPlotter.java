@@ -79,7 +79,7 @@ public class GraphPlotter {
         				Stage stage2 = stages.get(k);
         				List<StageOut> stageouts = stage2.getStageOut();
         				for(int l=0; l<stageouts.size(); l++){
-        					if(stageouts.get(l).get_id().equals(ref)){ // there is an edge (k,i)
+        					if(stageouts.get(l).getId().equals(ref)){ // there is an edge (k,i)
         						if(tasks_stage[i]>1){
         							for(int m=0; m<tasks_stage[i]; m++){
         								g.addEdge(stage2.getId(), stage.getId()+"("+m+")");

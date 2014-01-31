@@ -3,6 +3,9 @@ package parsing.jackson;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+
 import parsing.jackson.Stage.Execution;
 import parsing.jackson.Stage.Node;
 import parsing.jackson.Stage.StageIn;
@@ -113,7 +116,7 @@ public class Workflow {
 				if(sgin.getId().contains("#")){ //is a reference
 					boolean ref_exists = false;
 					for(int k=0; k<all_stageouts.size(); k++){
-						if(all_stageouts.get(k).get_id().equals(sgin.getId().split("#")[1])){
+						if(all_stageouts.get(k).getId().equals(sgin.getId().split("#")[1])){
 							ref_exists = true;
 							break;
 						}
@@ -131,8 +134,8 @@ public class Workflow {
 			if(s.getStageOut()==null) throw new CustomException("StageOut for " + s.getId() + " is null");
 			for(int j=0; j<s.getStageOut().size(); j++){
 				StageOut sgout = s.getStageOut().get(j);
-				if(sgout.get_id()==null) throw new CustomException("The stageout id " + j + " for the stage " + s.getId() + " is null");
-				if(sgout.getFile()==null) throw new CustomException("The stageout file " + j + " for the stage " + s.getId() + " is null");
+				if(sgout.getId()==null) throw new CustomException("The stageout id " + j + " for the stage " + s.getId() + " is null");
+				if((sgout.getFile()==null) && (sgout.getFilterIn()==null) ) throw new CustomException("The stageout file " + j + " for the stage " + s.getId() + " is null");
 				if(sgout.getType()==null) throw new CustomException("The stageout type " + j + " for the stage " + s.getId() + " is null");
 			}
 		}	
@@ -146,26 +149,38 @@ public class Workflow {
 				Execution e = s.getExecution().get(j);
 				if(e.getArguments().contains("#")){ //There is a reference
 					String[] args = e.getArguments().split(" ");
+					String new_args = "";
 					for(int k=0; k<args.length; k++){
 						if(args[k].contains("#")){
 							String ref = args[k].split("#")[1];
 							if(ref.contains("input")){ //We look for the inputs
 								for(int l=0; l<all_stageins.size(); l++){
 									StageIn sgin = all_stageins.get(l);
-									if(sgin.getURI()!=null){
-										
+									if(StringUtils.equals(ref,sgin.getId())){
+										new_args = new_args + " " + FilenameUtils.getName(sgin.getURI());
+										break;
 									}
 								}
 							}
-							else{ //We look for the outputs
-								
+							else { //We look for the outputs
+								for(int l=0; l<all_stageouts.size(); l++){
+									StageOut sgout = all_stageouts.get(l);
+									if(ref.contains(sgout.getId())){
+										if(sgout.getFilterIn()==null){ // The output is a single file with known filename
+											new_args = new_args + " " + sgout.getFile();
+										}
+										else new_args = new_args + " " + args[k]; //output that cannot be instantiated in deployment time 	
+										break;
+									}
+								}
 							}
 						}
+						else new_args = new_args + " " +  args[k];
 					}
+					e.setArguments(new_args);
 				}
+			}
 		}
 	}
-	
-	
 	
 }

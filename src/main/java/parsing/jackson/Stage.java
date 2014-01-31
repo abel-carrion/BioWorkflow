@@ -150,7 +150,7 @@ public class Stage {
 		private String _filterIn;
 		private String _replica;
 		
-		public String get_id() {
+		public String getId() {
 			return _id;
 		}
 		public void setId(String id) {
