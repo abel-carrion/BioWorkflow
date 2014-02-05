@@ -183,4 +183,32 @@ public class Workflow {
 		}
 	}
 	
+	public Host queryHost(Stage s){
+		for(int i=0; i<this._hosts.size(); i++){
+			Host h = this._hosts.get(i);
+			if(h.getHostName().equals(s.getHostId()))
+				return h;
+		}
+		return null;
+	}
+	
+	public Environment queryEnv(Stage s){
+		for(int i=0; i<this._environments.size(); i++){
+			Environment e = this._environments.get(i);
+			if(e.getEnvironmentId().equals(s.getEnvironmentId()))
+				return e;
+		}
+		return null;
+	}
+	
+	public StageOut queryStageOut(String reference){
+		String refId = reference.split("#")[1];
+		for(int i=0; i<this.all_stageouts.size(); i++){
+			StageOut sgout = this.all_stageouts.get(i);
+			if(sgout.getId().equals(refId))
+				return sgout;
+		}
+		return null;
+	}
+	
 }
