@@ -186,7 +186,8 @@ public class Workflow {
 	public Host queryHost(Stage s){
 		for(int i=0; i<this._hosts.size(); i++){
 			Host h = this._hosts.get(i);
-			if(h.getHostName().equals(s.getHostId()))
+			String hostId = s.getHostId().split("#")[1];
+			if(h.getHostName().equals(hostId));
 				return h;
 		}
 		return null;
@@ -195,7 +196,8 @@ public class Workflow {
 	public Environment queryEnv(Stage s){
 		for(int i=0; i<this._environments.size(); i++){
 			Environment e = this._environments.get(i);
-			if(e.getEnvironmentId().equals(s.getEnvironmentId()))
+			String environmentId = s.getEnvironmentId().split("#")[1];
+			if(e.getEnvironmentId().equals(environmentId))
 				return e;
 		}
 		return null;
@@ -209,6 +211,30 @@ public class Workflow {
 				return sgout;
 		}
 		return null;
+	}
+	
+	public String queryIfStageisCloud(String reference){
+		String refId = reference.split("#")[1];
+		for(int i=0; i<this._stages.size(); i++){
+			Stage s = this._stages.get(i);
+			if(this.queryHost(s).getType().equals("Cloud")){
+				for(int j=0; j<s.getStageOut().size(); j++){
+					StageOut sgout = s.getStageOut().get(j);
+					if(sgout.getId().equals(refId))
+						return s.getId();
+				}
+			}
+		}
+		return null;
+	}
+	
+	public Stage queryStage(String stageName){
+		for(int i=0; i<this._stages.size(); i++){
+			Stage s = this._stages.get(i);
+			if(s.getId().equals(stageName))
+				return s;
+		}
+		return null;	
 	}
 	
 }
