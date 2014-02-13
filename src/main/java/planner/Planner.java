@@ -20,6 +20,145 @@ public class Planner {
 		this.w = w;
 	}
 	
+	public Stage createDeployStage(Stage s, List<StageIn> inputFiles){
+		Stage deployStage = new Stage();
+		deployStage.setEnvironmentId(s.getEnvironmentId());
+		deployStage.setHostId(s.getHostId());
+		deployStage.setExecution(null);	//TODO: Add call to IM
+		deployStage.setId("DEPLOY_"+s.getId());
+		deployStage.setNodes(s.getNodes());
+		List<StageIn> stageIns = new ArrayList<StageIn>();
+		List<StageOut> stageOuts = new ArrayList<StageOut>();
+		for(int i=0; i<inputFiles.size(); i++){
+			StageIn stageIn = inputFiles.get(i);
+			stageIns.add(stageIn);
+			StageOut stageOut = new StageOut();
+			stageOut.setId("deploy_"+stageIn.getId());
+			stageOut.setFile(stageIn.getURI());
+			stageOut.setType(stageIn.getType());
+			stageOuts.add(stageOut);
+		}
+		deployStage.setStageIn(stageIns);
+		deployStage.setStageOut(stageOuts);
+		
+		this.w.getStages().add(deployStage);
+		return deployStage;
+	}
+	
+	public Stage createStageInCopy(Stage s, List<StageIn> inputFiles, boolean isCloud){
+		Stage copyStage = new Stage();
+		copyStage.setHostId(s.getHostId());
+		copyStage.setEnvironmentId(s.getEnvironmentId());
+		copyStage.setId("COPY_"+s.getId());
+		copyStage.setExecution(null);	//TODO: Add to the list of executions the copies of the stageins in inputFiles
+		List<StageIn> stageIns = new ArrayList<StageIn>();
+		List<StageOut> stageOuts = new ArrayList<StageOut>();
+		if(isCloud){
+			Stage deployStage = createDeployStage(s, inputFiles);
+			for(int i=0; i<deployStage.getStageOut().size(); i++){
+				StageIn stageIn = new StageIn();
+				stageIn.setId("#"+deployStage.getStageOut().get(i).getId());
+				stageIns.add(stageIn);
+			}
+			for(int i=0; i<deployStage.getStageOut().size(); i++){
+				StageOut stageOut = new StageOut();
+				stageOut.setFile(deployStage.getStageOut().get(i).getFile());
+				stageOut.setId("copy_"+deployStage.getStageOut().get(i).getId().split("_")[1]);
+				stageOut.setType(deployStage.getStageOut().get(i).getType());
+				stageOuts.add(stageOut);
+			}
+		}
+		else{ //'s' is not Cloud
+			for(int i=0; i<inputFiles.size(); i++){
+				StageIn stageIn = new StageIn();
+				stageIn.setId("#"+inputFiles.get(i).getId());
+				stageIns.add(stageIn);
+				s.getStagein().remove(inputFiles.get(i));
+			}
+			for(int i=0; i<inputFiles.size(); i++){
+				StageOut stageOut = new StageOut();
+				stageOut.setFile(inputFiles.get(i).getURI());
+				stageOut.setId("copy_"+inputFiles.get(i).getId());
+				stageOut.setType(inputFiles.get(i).getType());
+				stageOuts.add(stageOut);
+			}
+		}
+		copyStage.setStageIn(stageIns);
+		copyStage.setStageOut(stageOuts);
+		this.w.getStages().add(copyStage);
+		return copyStage;
+	}
+	
+	public void createStageInUndeploy(Stage copyStage, Stage s, List<StageIn> inputFiles){
+		for(int i=0; i<inputFiles.size(); i++){
+			String stageInId = inputFiles.get(i).getId();
+			String stageId = w.queryIfStageisCloud(stageInId);
+			if(stageId != null){ // The reference comes from a Cloud Stage
+				Stage undeployStage = w.queryStage("UNDEPLOY_"+stageId);
+				if(undeployStage == null){ // There is no UNDEPLOY stage created for the stage with Id stageId
+					undeployStage = new Stage();
+					undeployStage.setId("UNDEPLOY_"+stageId);
+					undeployStage.setStageIn(new ArrayList<StageIn>());
+					this.w.getStages().add(undeployStage);
+				}
+				StageIn stageIn = new StageIn();
+				stageIn.setId("#"+copyStage.getStageOut().get(i).getId());
+				undeployStage.getStagein().add(stageIn);
+			}
+		}
+		for(int i=0; i<inputFiles.size(); i++){
+			s.getStagein().remove(inputFiles.get(i));
+		}
+		for(int i=0; i<copyStage.getStageOut().size(); i++){
+			StageIn stageIn = new StageIn();
+			stageIn.setId("#"+copyStage.getStagein().get(i));
+			s.getStagein().add(stageIn);
+		}
+	}
+	
+	public Stage createStageOutCopy(Stage s, List<StageOut> outputFiles, boolean isCloud){
+		Stage copyStage = new Stage();
+		copyStage.setHostId(s.getHostId());
+		copyStage.setEnvironmentId(s.getEnvironmentId());
+		copyStage.setId("COPY_"+s.getId());
+		copyStage.setExecution(null);	//TODO: Add to the list of executions the copies of the stageins in inputFiles
+		List<StageIn> stageIns = new ArrayList<StageIn>();			
+		for(int i=0; i<outputFiles.size(); i++){
+			StageIn stageIn = new StageIn();
+			stageIn.setId("#"+outputFiles.get(i).getId());
+			stageIns.add(stageIn);
+		}
+		List<StageOut> stageOuts = new ArrayList<StageOut>();
+		for(int i=0; i<outputFiles.size(); i++){
+			StageOut stageOut = new StageOut();
+			stageOut.setFile(outputFiles.get(i).getFile());
+			stageOut.setId("copy_"+outputFiles.get(i).getId());
+			stageOut.setType(outputFiles.get(i).getType());
+			stageOuts.add(stageOut);
+		}
+		copyStage.setStageIn(stageIns);
+		copyStage.setStageOut(stageOuts);
+		if(isCloud) 
+			createStageOutUndeploy(copyStage, s);
+		this.w.getStages().add(copyStage);
+		return copyStage;
+	}
+	
+	public void createStageOutUndeploy(Stage copyStage, Stage s){
+		Stage undeployStage = new Stage();
+		undeployStage.setId("UNDEPLOY_"+s.getId());
+		undeployStage.setStageIn(new ArrayList<StageIn>());
+		List<StageIn> stageIns = new ArrayList<StageIn>();
+		for(int i=0; i<copyStage.getStageOut().size(); i++){
+			StageIn stageIn = new StageIn();
+			stageIn.setId("#"+copyStage.getStageOut().get(i).getId());
+			stageIns.add(stageIn);
+		}
+		undeployStage.setStageIn(stageIns);
+		this.w.getStages().add(undeployStage);
+	}
+	
+	
 	public Workflow convert(){
 		
 		List<Stage> stages = w.getStages();
@@ -27,134 +166,23 @@ public class Planner {
 		//Each stage of the logical workflow is examined
 		for(int i=0; i<n_stages; i++){
 			Stage s = w.getStages().get(i);
+			//CONVERSION OF THE STAGE-INS
 			Host h = w.queryHost(s);
-			List<StageIn> refs = new ArrayList<StageIn>();
+			List<StageIn> inputFiles = new ArrayList<StageIn>();
 			for(int j=0; j<s.getStagein().size(); j++){
 					StageIn sgin = s.getStagein().get(j);
-					if(sgin.getId().contains("#")){ //is a reference
-						refs.add(sgin);
+					if(sgin.getType().equals("File")){ 
+						inputFiles.add(sgin);
 					}
 			}
-			if(h.getType().equals("Cloud")){
-				//Add DEPLOY stage
-				Stage deploy_stage = new Stage();
-				deploy_stage.setEnvironmentId(s.getEnvironmentId());
-				deploy_stage.setHostId(s.getHostId());
-				deploy_stage.setExecution(null); //TODO: Add call to IM
-				deploy_stage.setId("DEPLOY_"+s.getId());
-				deploy_stage.setNodes(s.getNodes());
-				List<StageOut> stgouts = new ArrayList<StageOut>();
-				StageOut dstgout = new StageOut();
-				dstgout.setFile("output_"+deploy_stage.getId());
-				dstgout.setId(deploy_stage.getId());
-				dstgout.setType("Check");
-				stgouts.add(dstgout);
-				deploy_stage.setStageOut(stgouts);
-				//StageIn for the next stage
-				StageIn stgin = new StageIn();
-				stgin.setId("#"+dstgout.getId());
-					
-				if(refs.size()==0){ //It's an initial stage (the next stage is 's')
-					s.getStagein().add(stgin);
-				}
-				else{ //It's an intermediary stage (the next stage is COPY)
-					deploy_stage.setStageIn(new ArrayList<StageIn>());
-					List<StageIn> stgins = deploy_stage.getStagein();
-					for(int k=0; k<refs.size(); k++){
-						stgins.add(refs.get(k));
-					}
-					for(int k=0; k<refs.size(); k++){
-						s.getStagein().remove(refs.get(k));
-					}
-					deploy_stage.setStageIn(stgins);
-						
-					Stage copy_stage = new Stage();
-					copy_stage.setHostId(s.getHostId());
-					copy_stage.setId("COPY_"+s.getId());
-					//TODO: Add to the list of executions the copies of the files in the stageins list of DEPLOY
-					copy_stage.setStageIn(new ArrayList<StageIn>());
-					copy_stage.getStagein().add(stgin);
-					copy_stage.setStageOut(new ArrayList<StageOut>());
-					StageOut cstgout = new StageOut();
-					cstgout.setFile("output_"+copy_stage.getId());
-					cstgout.setId(copy_stage.getId());
-					cstgout.setType("Check");
-					copy_stage.getStageOut().add(cstgout);
-					stages.add(copy_stage);
-						
-					StageIn copyStgin = new StageIn();
-					copyStgin.setId("#"+copy_stage.getId());
-					s.getStagein().add(copyStgin);
-						
-					//Create UNDEPLOY stage for the cloud references
-					for(int k=0; k<refs.size(); k++){
-						String sgin = refs.get(k).getId();
-						String stageId = w.queryIfStageisCloud(sgin);
-						if(stageId != null){ // The reference comes from a Cloud Stage
-							Stage undeploy_stage = w.queryStage("UNDEPLOY_"+stageId);
-							if(undeploy_stage == null){ // There is no UNDEPLOY stage created for the stage with Id stageId
-								undeploy_stage = new Stage();
-								undeploy_stage.setId("UNDEPLOY_"+stageId);
-							}
-								undeploy_stage.getStagein().add(copyStgin);
-						}
-					}
-						
-				}
-				stages.add(deploy_stage);
-				List<StageOut> outrefs = new ArrayList<StageOut>();
-				for(int l=0; l<s.getStageOut().size(); l++){
-					StageOut sgout = s.getStageOut().get(l);
-					if(sgout.getId().contains("#")){ //is a reference
-						outrefs.add(sgout);
-					}
-				}
-				if(outrefs.size()==0){ //'s' it's a final stage
-					Stage undeploy_stage = new Stage();
-					undeploy_stage.setId("UNDEPLOY_"+s.getId());
-					//TODO: Add to the list of executions the call to the IM
-				}
+			boolean isCloud = h.getType().equals("Cloud");
+			Stage copyStage = createStageInCopy(s, inputFiles, isCloud);
+			createStageInUndeploy(copyStage, s, inputFiles);
+			//CONVERSION OF THE STAGE-OUTS	(if 's' is final stage)
+			if(w.isFinalStage(s)){
+				createStageOutCopy(s, s.getStageOut(), isCloud);
 			}
-			else{
-					Stage copy_stage = new Stage();
-					copy_stage.setHostId(s.getHostId());
-					copy_stage.setId("COPY_"+s.getId());
-					List<StageIn> stgins = copy_stage.getStagein();
-					for(int k=0; k<refs.size(); k++){
-						stgins.add(refs.get(k));
-					}
-					for(int k=0; k<refs.size(); k++){
-						s.getStagein().remove(refs.get(k));
-					}
-					//TODO: Add to the list of executions the copies of the files of the references
-					copy_stage.setStageIn(stgins);
-					copy_stage.setStageOut(new ArrayList<StageOut>());
-					StageOut cstgout = new StageOut();
-					cstgout.setFile("output_"+copy_stage.getId());
-					cstgout.setId(copy_stage.getId());
-					cstgout.setType("Check");
-					copy_stage.getStageOut().add(cstgout);
-					stages.add(copy_stage);
-					
-					StageIn copyStgin = new StageIn();
-					copyStgin.setId("#"+copy_stage.getId());
-					s.getStagein().add(copyStgin);
-				    
-					//Create UNDEPLOY stage for the cloud references
-					for(int k=0; k<refs.size(); k++){
-						String sgin = refs.get(k).getId();
-						String stageId = w.queryIfStageisCloud(sgin);
-						if(stageId != null){ // The reference comes from a Cloud Stage
-							Stage undeploy_stage = w.queryStage("UNDEPLOY_"+stageId);
-							if(undeploy_stage == null){ // There is no UNDEPLOY stage created for the stage with Id stageId
-								undeploy_stage = new Stage();
-								undeploy_stage.setId("UNDEPLOY_"+stageId);
-							}
-							undeploy_stage.getStagein().add(copyStgin);
-						}
-					}
-				}
-			}
+		}
 		return w;
 	}
 
