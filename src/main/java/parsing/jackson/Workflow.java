@@ -237,4 +237,16 @@ public class Workflow {
 		return null;	
 	}
 	
+	public boolean isFinalStage(Stage s){
+		List<StageIn> allStageIns = this.all_stageins;
+		List<StageOut> stageOuts = s.getStageOut();
+		for(int i=0; i<stageOuts.size(); i++){
+			for(int j=0; j<allStageIns.size(); j++){
+				if(("#"+stageOuts.get(i).getId()).equals(allStageIns.get(j).getId()))
+					return false;
+			}
+		}
+		return true;
+	}
+	
 }
