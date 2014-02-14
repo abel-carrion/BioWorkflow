@@ -47,6 +47,9 @@ public class Workflow {
 	}
 	
 	public void validation() throws CustomException{
+		
+		this.create_stageLists();
+		
 		//validates all the fields of the Workflow class
 		for(int i=0; i<_stages.size(); i++){
 			Stage s = _stages.get(i);
@@ -107,8 +110,6 @@ public class Workflow {
 			List<Execution> executions = s.getExecution();
 			if(executions==null) throw new CustomException("At least one execution must be specified for the stage " + s.getId());
 			
-			
-			this.create_stageLists();
 			//check stage-ins
 			for(int j=0; j<s.getStagein().size(); j++){
 				StageIn sgin = s.getStagein().get(j);
@@ -181,6 +182,18 @@ public class Workflow {
 				}
 			}
 		}
+		for(int i=0; i<this.all_stageins.size(); i++){ //Complete the information in stagein references
+			StageIn stageIn = this.all_stageins.get(i);
+			if(stageIn.getId().contains("#")){ //is a reference
+				for(int j=0; j<this.all_stageouts.size(); j++){
+					StageOut stageOut = this.all_stageouts.get(j);
+					if(stageOut.getId().equals(stageIn.getId().split("#")[1])){
+						stageIn.setType(stageOut.getType());
+						stageIn.setURI(stageOut.getFile());
+					}
+				}
+			}
+		}
 	}
 	
 	public Host queryHost(Stage s){
@@ -214,13 +227,14 @@ public class Workflow {
 	}
 	
 	public String queryIfStageisCloud(String reference){
-		String refId = reference.split("#")[1];
+		if(reference.contains("#"))
+			reference = reference.split("#")[1];
 		for(int i=0; i<this._stages.size(); i++){
 			Stage s = this._stages.get(i);
 			if(this.queryHost(s).getType().equals("Cloud")){
 				for(int j=0; j<s.getStageOut().size(); j++){
 					StageOut sgout = s.getStageOut().get(j);
-					if(sgout.getId().equals(refId))
+					if(sgout.getId().equals(reference))
 						return s.getId();
 				}
 			}
@@ -248,5 +262,17 @@ public class Workflow {
 		}
 		return true;
 	}
+	
+//	public StageIn queryStageIn(StageIn stageIn){
+//		if(stageIn.getId().contains("#")){
+//			String stageInId = stageIn.getId().split("#")[1];
+//			for(int i=0; i<this.all_stageins.size(); i++){
+//				if(this.all_stageins.get(i).getId().equals(stageInId))
+//					return this.all_stageins.get(i);
+//			}
+//			return null;
+//		}
+//		else return stageIn;
+//	}
 	
 }

@@ -11,9 +11,11 @@ import org.slf4j.LoggerFactory;
 
 
 
+
 import enactor.Connector.PBS_Connector;
 import parsing.jackson.Workflow;
 import parsing.jackson.Workflow.CustomException;
+import planner.Planner;
 
 public class Demo {
 	
@@ -31,14 +33,10 @@ public class Demo {
 			logger.debug("Replacing static arguments of workflow START");
 			workflow.instantiate_arguments();
 			logger.debug("Replacing references finished");
-			try {		
-				workflow.validation();
-			} catch (CustomException e) {
-				System.out.println(e.getLocalizedMessage());
-				return;
-			}
-			// Compilation from logical workflow to physical workflow
-			
+			// Conversion from logical workflow to physical workflow
+			logger.debug("Conversion from logical workflow to physical workflow");
+			Planner planner = new Planner(workflow);
+			planner.convert();
 			// workflow representation
 			//GraphPlotter plotter = new GraphPlotter();
 			//plotter.plot(workflow);
