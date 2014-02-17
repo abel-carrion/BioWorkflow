@@ -216,8 +216,8 @@ public class Workflow {
 		return null;
 	}
 	
-	public StageOut queryStageOut(String reference){
-		String refId = reference.split("#")[1];
+	public StageOut queryStageOut(StageIn stageIn){
+		String refId = stageIn.getId().split("#")[1];
 		for(int i=0; i<this.all_stageouts.size(); i++){
 			StageOut sgout = this.all_stageouts.get(i);
 			if(sgout.getId().equals(refId))
@@ -262,17 +262,6 @@ public class Workflow {
 		}
 		return true;
 	}
-	
-//	public StageIn queryStageIn(StageIn stageIn){
-//		if(stageIn.getId().contains("#")){
-//			String stageInId = stageIn.getId().split("#")[1];
-//			for(int i=0; i<this.all_stageins.size(); i++){
-//				if(this.all_stageins.get(i).getId().equals(stageInId))
-//					return this.all_stageins.get(i);
-//			}
-//			return null;
-//		}
-//		else return stageIn;
-//	}
+
 	
 }
