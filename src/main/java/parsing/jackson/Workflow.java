@@ -182,26 +182,15 @@ public class Workflow {
 				}
 			}
 		}
-		for(int i=0; i<this.all_stageins.size(); i++){ //Complete the information in stagein references
-			StageIn stageIn = this.all_stageins.get(i);
-			if(stageIn.getId().contains("#")){ //is a reference
-				for(int j=0; j<this.all_stageouts.size(); j++){
-					StageOut stageOut = this.all_stageouts.get(j);
-					if(stageOut.getId().equals(stageIn.getId().split("#")[1])){
-						stageIn.setType(stageOut.getType());
-						stageIn.setURI(stageOut.getFile());
-					}
-				}
-			}
-		}
 	}
 	
 	public Host queryHost(Stage s){
 		for(int i=0; i<this._hosts.size(); i++){
 			Host h = this._hosts.get(i);
 			String hostId = s.getHostId().split("#")[1];
-			if(h.getHostName().equals(hostId));
+			if(h.getHostId().equals(hostId)){
 				return h;
+			}
 		}
 		return null;
 	}

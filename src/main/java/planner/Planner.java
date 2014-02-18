@@ -71,7 +71,7 @@ public class Planner {
 			for(int i=0; i<deployStage.getStageOut().size(); i++){
 				StageOut stageOut = new StageOut();
 				stageOut.setFile(deployStage.getStageOut().get(i).getFile());
-				stageOut.setId(copyStage.getId()+"_"+deployStage.getStageOut().get(i).getId().split("_")[1]);
+				stageOut.setId(copyStage.getId()+"_"+deployStage.getStageOut().get(i).getId().split("_")[2]);
 				stageOut.setType(deployStage.getStageOut().get(i).getType());
 				stageOuts.add(stageOut);
 			}
@@ -123,7 +123,7 @@ public class Planner {
 		}
 		for(int i=0; i<copyStage.getStageOut().size(); i++){
 			StageIn stageIn = new StageIn();
-			stageIn.setId("#"+copyStage.getStagein().get(i));
+			stageIn.setId("#"+copyStage.getStageOut().get(i).getId());
 			s.getStagein().add(stageIn);
 		}
 	}
@@ -132,7 +132,7 @@ public class Planner {
 		Stage copyStage = new Stage();
 		copyStage.setHostId(s.getHostId());
 		copyStage.setEnvironmentId(s.getEnvironmentId());
-		copyStage.setId("COPY_"+s.getId());
+		copyStage.setId("copyout_"+s.getId());
 		copyStage.setExecution(null);	//TODO: Add to the list of executions the copies of the stageins in inputFiles
 		List<StageIn> stageIns = new ArrayList<StageIn>();			
 		for(int i=0; i<outputFiles.size(); i++){
@@ -150,15 +150,15 @@ public class Planner {
 		}
 		copyStage.setStageIn(stageIns);
 		copyStage.setStageOut(stageOuts);
+		this.w.getStages().add(copyStage);
 		if(isCloud) 
 			createStageOutUndeploy(copyStage, s);
-		this.w.getStages().add(copyStage);
 		return copyStage;
 	}
 	
 	public void createStageOutUndeploy(Stage copyStage, Stage s){
 		Stage undeployStage = new Stage();
-		undeployStage.setId("UNDEPLOY_"+s.getId());
+		undeployStage.setId("undeploy_"+s.getId());
 		undeployStage.setStageIn(new ArrayList<StageIn>());
 		List<StageIn> stageIns = new ArrayList<StageIn>();
 		for(int i=0; i<copyStage.getStageOut().size(); i++){
@@ -183,7 +183,7 @@ public class Planner {
 			List<StageIn> inputFiles = new ArrayList<StageIn>();
 			for(int j=0; j<s.getStagein().size(); j++){
 					StageIn sgin = s.getStagein().get(j);
-					if(sgin.getType().equals("File")){ 
+					if((sgin.getType()!=null) && (sgin.getType().equals("File"))){ 
 						inputFiles.add(sgin);
 					}
 					else{
