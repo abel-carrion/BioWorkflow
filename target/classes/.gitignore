@@ -1,3 +1,5 @@
+/core
+/db
+/enactor
 /parsing
 /planner
-/core

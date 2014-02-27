@@ -111,6 +111,7 @@ public class Planner {
 					undeployStage = new Stage();
 					undeployStage.setId("undeploy_"+stageId);
 					undeployStage.setStageIn(new ArrayList<StageIn>());
+					undeployStage.setStageOut(new ArrayList<StageOut>());
 					this.w.getStages().add(undeployStage);
 				}
 				StageIn stageIn = new StageIn();
@@ -161,12 +162,14 @@ public class Planner {
 		undeployStage.setId("undeploy_"+s.getId());
 		undeployStage.setStageIn(new ArrayList<StageIn>());
 		List<StageIn> stageIns = new ArrayList<StageIn>();
+		List<StageOut> stageOuts = new ArrayList<StageOut>();
 		for(int i=0; i<copyStage.getStageOut().size(); i++){
 			StageIn stageIn = new StageIn();
 			stageIn.setId("#"+copyStage.getStageOut().get(i).getId());
 			stageIns.add(stageIn);
 		}
 		undeployStage.setStageIn(stageIns);
+		undeployStage.setStageOut(stageOuts);
 		this.w.getStages().add(undeployStage);
 	}
 	

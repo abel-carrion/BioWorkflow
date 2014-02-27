@@ -1,13 +1,31 @@
 package parsing.jackson;
 
+import java.util.Date;
 import java.util.List;
 
+import com.google.code.morphia.annotations.Embedded;
+import com.google.code.morphia.annotations.Entity;
+import com.google.code.morphia.annotations.Id;
+
 public class Stage {
+	@Entity("stages")
 	
-	private String _id;
+	public enum Status {
+		   IDLE, RUNNING, FINISHED, FAILED;
+	}	
+	
+	public enum IOStatus {
+		   ENABLED, DISABLED;
+	}
+	
+	@Id private String _id;
 	private String _hostId;
 	private String _environmentId;
+	private Status _status;
+	private Date _startDate;
+	private Date _endDate;
 	
+	@Embedded
 	public static class disk{
 		private String _nDisk;
 		private String _diskSize;
@@ -26,6 +44,7 @@ public class Stage {
 		}	
 	}
 	
+	@Embedded
 	public static class Node{
 		private String _numNodes;
 		private String _coresPerNode;
@@ -67,6 +86,7 @@ public class Stage {
 		this._nodes = nodes;
 	}
 
+	@Embedded
 	public static class Execution{
 		private String _path;
 		private String _arguments;
@@ -88,6 +108,7 @@ public class Stage {
 	
 	private List<Execution> _execution;
 	
+	@Embedded
 	public static class Retries{
 		private String _onWallTimeExceeded;
 		private String _onSoftwareFailure;
@@ -115,10 +136,12 @@ public class Stage {
 	
 	private Retries _retries;
 	
+	@Embedded
 	public static class StageIn{
 		private String _id;
 		private String _type;
 		private String _URI;
+		private IOStatus _status;
 		
 		public String getId() {
 			return _id;
@@ -138,17 +161,26 @@ public class Stage {
 		public void setURI(String URI) {
 			this._URI = URI;
 		}
+		public IOStatus getStatus() {
+			return _status;
+		}
+		public void set_status(IOStatus status) {
+			this._status = status;
+		}
+		
 		
 	}
 	
 	private List<StageIn> _stageIn;
 	
+	@Embedded
 	public static class StageOut{
 		private String _id;
 		private String _type;
 		private String _file;
 		private String _filterIn;
 		private String _replica;
+		private IOStatus _status;
 		
 		public String getId() {
 			return _id;
@@ -180,6 +212,13 @@ public class Stage {
 		public void setReplica(String replica) {
 			this._replica = replica;
 		}
+		public IOStatus getStatus() {
+			return _status;
+		}
+		public void set_status(IOStatus status) {
+			this._status = status;
+		}
+		
 	}
 	private List<StageOut> _stageOut;
 	
@@ -203,6 +242,24 @@ public class Stage {
 		this._environmentId = environmentId;
 	}
 	
+	public Status getStatus() {
+		return _status;
+	}
+	public void setStatus(Status status) {
+		this._status = status;
+	}
+	public Date getStartDate() {
+		return _startDate;
+	}
+	public void setStartDate(Date startDate) {
+		this._startDate = startDate;
+	}
+	public Date getEndDate() {
+		return _endDate;
+	}
+	public void setEndDate(Date endDate) {
+		this._endDate = endDate;
+	}
 	public List<Execution> getExecution() {
 		return _execution;
 	}

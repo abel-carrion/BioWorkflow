@@ -9,13 +9,15 @@ import org.jgrapht.demo.GraphPlotter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
-
+import db.mongodb;
 import enactor.Connector.PBS_Connector;
+import parsing.jackson.Stage;
+import parsing.jackson.Stage.StageIn;
+import parsing.jackson.Stage.StageOut;
 import parsing.jackson.Workflow;
 import parsing.jackson.Workflow.CustomException;
 import planner.Planner;
+import enactor.Runtime;
 
 public class Demo {
 	
@@ -33,10 +35,27 @@ public class Demo {
 			logger.debug("Replacing static arguments of workflow START");
 			workflow.instantiate_arguments();
 			logger.debug("Replacing references finished");
-			// Conversion from logical workflow to physical workflow
 			logger.debug("Conversion from logical workflow to physical workflow");
 			Planner planner = new Planner(workflow);
 			planner.convert();
+			logger.debug("Initializing mongodb");
+			mongodb mongo = new mongodb();
+			mongo.createDB("BioWorkflow");
+//			for(int i=0; i<workflow.getStages().size(); i++){
+//				Stage s = workflow.getStages().get(i);
+//				s.setStatus(Stage.Status.IDLE);
+//				for(int j=0; j<s.getStagein().size(); j++){
+//					StageIn sgin = s.getStagein().get(j);
+//					sgin.set_status(Stage.IOStatus.DISABLED);
+//				}
+//				for(int j=0; j<s.getStageOut().size(); j++){
+//					StageOut sgout = s.getStageOut().get(j);
+//					sgout.set_status(Stage.IOStatus.DISABLED);
+//				}
+//				mongo.insert(s);
+//			}
+			Runtime runtime = new Runtime(workflow, mongo);
+			runtime.run();
 			// workflow representation
 			//GraphPlotter plotter = new GraphPlotter();
 			//plotter.plot(workflow);

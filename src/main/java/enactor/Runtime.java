@@ -2,25 +2,22 @@ package enactor;
 
 import java.util.List;
 
+import db.mongodb;
 import parsing.jackson.Stage;
 import parsing.jackson.Stage.Execution;
+import parsing.jackson.Stage.IOStatus;
 import parsing.jackson.Stage.StageIn;
+import parsing.jackson.Stage.Status;
 import parsing.jackson.Workflow;
 
 public class Runtime {
 	
-	public enum Status {
-		   IDLE, RUNNING, FINISHED, FAILED;
-	}
-	
-	public enum StageInStatus {
-		   ENABLED, DISABLED;
-	}
-	
 	private Workflow w;
+	private mongodb mongo;
 	
-	public Runtime(Workflow w){
+	public Runtime(Workflow w, mongodb mongo){
 		this.w = w;
+		this.mongo = mongo;
 	}
 	
 	public void run(){
@@ -29,25 +26,27 @@ public class Runtime {
 		while(nStages!=0){ //there are pending stages to be executed
 			for(int i=0; i<w.getStages().size(); i++){
 				Stage s = w.getStages().get(i);
-				Status status = Runtime.Status.IDLE; //TODO: Query the status of the stage on the database
-				if(status==Runtime.Status.IDLE){
+				Status status = mongo.queryStageStatus(s.getId());
+				if(status==Stage.Status.IDLE){
 					List<StageIn> stageins = s.getStagein();
-					boolean isEnabled = true; // by default, an IDLE stage is not enabled
+					boolean isEnabled = true; //by default, an IDLE stage is not enabled
 					for(int j=0; j<stageins.size(); j++){
-						//TODO: Query the status of the stage-in on the database
-						//TODO: If the status of the stage-in is DISABLED then isEnabled = false; break;
+						IOStatus sginStatus = mongo.queryStageInStatus(s.getId(),j); //Query the status of the stage-in on the database
+						if(sginStatus.equals(IOStatus.DISABLED)){
+							isEnabled = false;
+							break;
+						}
 					}
 					if(isEnabled){
 						List<Execution> executions = s.getExecution();
 						for(int k=0; k<executions.size(); k++){
 							//TODO: Execute executions.get(k)
 						}
+						mongo.updateStageStatus(s, Status.RUNNING);
 					}
-					//TODO: Set status to RUNNING
 				}
-				else if(status==Runtime.Status.RUNNING){
-					//TODO: Call job_status
-					
+				else if(status==Stage.Status.RUNNING){
+					//TODO: Call job_status	
 				}
 			}
 			try {
