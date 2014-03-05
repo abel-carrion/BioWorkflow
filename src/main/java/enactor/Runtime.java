@@ -1,5 +1,6 @@
 package enactor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import db.mongodb;
@@ -14,24 +15,35 @@ public class Runtime {
 	
 	private Workflow w;
 	private mongodb mongo;
+	private String SessionID;
 	
 	public Runtime(Workflow w, mongodb mongo){
 		this.w = w;
 		this.mongo = mongo;
+		this.SessionID = System.currentTimeMillis()+"";	
 	}
 	
 	public void run_copy(Stage s){
-		//create temporal dir on destination
-		List<StageIn> sgins = s.getStagein();
-		for(int i=0; i<sgins.size(); i++){
+		//We fill the Stage with the proper command lines
+		//Commandline for dir creation
+		s.setExecution(new ArrayList<Execution>());
+		Execution e = new Execution();
+		e.setPath("mkdir");
+		e.setArguments(SessionID);
+		s.getExecution().add(e);
+		//Commandline for downloading the files
+		for(int i=0; i<s.getStagein().size(); i++){
 			StageIn sgin = s.getStagein().get(i);
-			
-			
+			for(int j=0; j<sgin.getValues().length; j++){
+				e.setPath("wget");
+				e.setArguments(sgin.getValues()[j]);
+			}
 		}
+		PBS_Connector con = new PBS_Connector(w.queryHost(s),w.queryEnv(s));
 	}
 	
 	public void run_deploy(Stage s){
-		
+		//TODO: Call deploy infrastructure method of IM
 	}
 	
 	public void run_process(Stage s){
@@ -39,7 +51,7 @@ public class Runtime {
 	}
 	
 	public void run_undeploy(Stage s){
-		
+		//TODO: Call undeploy infrastructure method of IM
 	}
 	
 	public void run(){

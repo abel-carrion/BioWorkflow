@@ -140,7 +140,7 @@ public class Stage {
 	public static class StageIn{
 		private String _id;
 		private String _type;
-		private String _URI;
+		private String[] _values;
 		private IOStatus _status;
 		
 		public String getId() {
@@ -155,11 +155,11 @@ public class Stage {
 		public void setType(String type) {
 			this._type = type;
 		}
-		public String getURI() {
-			return _URI;
+		public String[] getValues() {
+			return _values;
 		}
-		public void setURI(String URI) {
-			this._URI = URI;
+		public void setValues(String[] values) {
+			this._values = values;
 		}
 		public IOStatus getStatus() {
 			return _status;
@@ -177,7 +177,7 @@ public class Stage {
 	public static class StageOut{
 		private String _id;
 		private String _type;
-		private String _file;
+		private String[] _values;
 		private String _filterIn;
 		private String _replica;
 		private IOStatus _status;
@@ -194,11 +194,11 @@ public class Stage {
 		public void setType(String type) {
 			this._type = type;
 		}
-		public String getFile() {
-			return _file;
+		public String[] getValues() {
+			return _values;
 		}
-		public void setFile(String file) {
-			this._file = file;
+		public void setValues(String[] values) {
+			this._values = values;
 		}
 		public String getFilterIn() {
 			return _filterIn;
@@ -215,7 +215,7 @@ public class Stage {
 		public IOStatus getStatus() {
 			return _status;
 		}
-		public void set_status(IOStatus status) {
+		public void setStatus(IOStatus status) {
 			this._status = status;
 		}
 		

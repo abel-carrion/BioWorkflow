@@ -126,7 +126,7 @@ public class Workflow {
 				}
 				else{
 					if(sgin.getType()==null) throw new CustomException("The stagein type " + j + " for the stage " + s.getId() + " is null");
-					if(sgin.getURI()==null) throw new CustomException("The stagein URI " + j + " for the stage " + s.getId() + " is null");
+					if(sgin.getValues()==null) throw new CustomException("The stagein URI " + j + " for the stage " + s.getId() + " is null");
 					
 				}
 			}
@@ -136,7 +136,7 @@ public class Workflow {
 			for(int j=0; j<s.getStageOut().size(); j++){
 				StageOut sgout = s.getStageOut().get(j);
 				if(sgout.getId()==null) throw new CustomException("The stageout id " + j + " for the stage " + s.getId() + " is null");
-				if((sgout.getFile()==null) && (sgout.getFilterIn()==null) ) throw new CustomException("The stageout file " + j + " for the stage " + s.getId() + " is null");
+				if((sgout.getValues()==null) && (sgout.getFilterIn()==null) ) throw new CustomException("The stageout file " + j + " for the stage " + s.getId() + " is null");
 				if(sgout.getType()==null) throw new CustomException("The stageout type " + j + " for the stage " + s.getId() + " is null");
 			}
 		}	
@@ -157,8 +157,8 @@ public class Workflow {
 							if(ref.contains("input")){ //We look for the inputs
 								for(int l=0; l<all_stageins.size(); l++){
 									StageIn sgin = all_stageins.get(l);
-									if(StringUtils.equals(ref,sgin.getId())){
-										new_args = new_args + " " + FilenameUtils.getName(sgin.getURI());
+									if(StringUtils.equals(ref,sgin.getId()) && (sgin.getValues().length == 1)){
+										new_args = new_args + " " + FilenameUtils.getName(sgin.getValues()[0]);
 										break;
 									}
 								}
@@ -167,8 +167,8 @@ public class Workflow {
 								for(int l=0; l<all_stageouts.size(); l++){
 									StageOut sgout = all_stageouts.get(l);
 									if(ref.contains(sgout.getId())){
-										if(sgout.getFilterIn()==null){ // The output is a single file with known filename
-											new_args = new_args + " " + sgout.getFile();
+										if(sgout.getFilterIn()==null && (sgout.getValues().length == 1)){ // The output is a single file with known filename
+											new_args = new_args + " " + sgout.getValues()[0];
 										}
 										else new_args = new_args + " " + args[k]; //output that cannot be instantiated in deployment time 	
 										break;

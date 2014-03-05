@@ -37,12 +37,12 @@ public class Planner {
 			stageOuts.add(stageOut);
 			if(!stageIn.getId().contains("#")){
 				stageOut.setId(deployStage.getId()+"_"+stageIn.getId());
-				stageOut.setFile(stageIn.getURI());
+				stageOut.setValues(stageIn.getValues());
 			}
 			else{ //is a stageIn reference
 				StageOut stageOutReferenced = w.queryStageOut(stageIn);
 				stageOut.setId(deployStage.getId()+"_"+stageOutReferenced.getId());
-				stageOut.setFile(stageOutReferenced.getFile());
+				stageOut.setValues(stageOutReferenced.getValues());
 				stageOut.setFilterIn(stageOutReferenced.getFilterIn());
 			}
 		}
@@ -70,7 +70,7 @@ public class Planner {
 			}
 			for(int i=0; i<deployStage.getStageOut().size(); i++){
 				StageOut stageOut = new StageOut();
-				stageOut.setFile(deployStage.getStageOut().get(i).getFile());
+				stageOut.setValues(deployStage.getStageOut().get(i).getValues());
 				stageOut.setId(copyStage.getId()+"_"+deployStage.getStageOut().get(i).getId().split("_")[2]);
 				stageOut.setType(deployStage.getStageOut().get(i).getType());
 				stageOuts.add(stageOut);
@@ -85,12 +85,12 @@ public class Planner {
 				stageOuts.add(stageOut);
 				if(!stageIn.getId().contains("#")){
 					stageOut.setId(copyStage.getId()+"_"+stageIn.getId());
-					stageOut.setFile(stageIn.getURI());
+					stageOut.setValues(stageIn.getValues());
 				}
 				else{ //is a stageIn reference
 					StageOut stageOutReferenced = w.queryStageOut(stageIn);
 					stageOut.setId(copyStage.getId()+"_"+stageOutReferenced.getId());
-					stageOut.setFile(stageOutReferenced.getFile());
+					stageOut.setValues(stageOutReferenced.getValues());
 					stageOut.setFilterIn(stageOutReferenced.getFilterIn());
 				}
 			}
@@ -144,8 +144,8 @@ public class Planner {
 		List<StageOut> stageOuts = new ArrayList<StageOut>();
 		for(int i=0; i<outputFiles.size(); i++){
 			StageOut stageOut = new StageOut();
-			stageOut.setFile(outputFiles.get(i).getFile());
-			stageOut.setId("copy_"+outputFiles.get(i).getId());
+			stageOut.setValues(outputFiles.get(i).getValues());
+			stageOut.setId("copyout_"+outputFiles.get(i).getId());
 			stageOut.setType(outputFiles.get(i).getType());
 			stageOuts.add(stageOut);
 		}

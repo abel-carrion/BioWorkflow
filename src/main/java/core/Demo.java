@@ -46,11 +46,11 @@ public class Demo {
 //				s.setStatus(Stage.Status.IDLE);
 //				for(int j=0; j<s.getStagein().size(); j++){
 //					StageIn sgin = s.getStagein().get(j);
-//					sgin.set_status(Stage.IOStatus.DISABLED);
+//					sgin.setStatus(Stage.IOStatus.DISABLED);
 //				}
 //				for(int j=0; j<s.getStageOut().size(); j++){
 //					StageOut sgout = s.getStageOut().get(j);
-//					sgout.set_status(Stage.IOStatus.DISABLED);
+//					sgout.setStatus(Stage.IOStatus.DISABLED);
 //				}
 //				mongo.insert(s);
 //			}

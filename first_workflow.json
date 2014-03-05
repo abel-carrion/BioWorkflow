@@ -65,7 +65,9 @@
     {
     	"id": "input0",
        	"type": "File",
-        "uri": "seqs.fasta"
+        "values": [
+        	"seqs.fasta"
+        ]
     }
     ],
     
@@ -120,7 +122,7 @@
     {
      	"id": "output1",
      	"type": "File",
-     	"filterIn": "header*"
+     	"filterIn": "fragment*"
     }
     ]
 },
@@ -166,7 +168,9 @@
     {
      	"id": "output2",
      	"type": "File",
-     	"file": "result.txt",
+     	"values":[ 
+     	"result.txt"
+     	],
      	"replica": "TODO"
     }
     ]
