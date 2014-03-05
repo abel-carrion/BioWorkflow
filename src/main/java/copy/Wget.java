@@ -19,5 +19,4 @@ public class Wget extends Protocol {
 	public String getCommandLine(){
 		return "wget" + " " + URI;
 	}
-
 }

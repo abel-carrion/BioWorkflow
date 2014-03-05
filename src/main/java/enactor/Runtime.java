@@ -20,6 +20,28 @@ public class Runtime {
 		this.mongo = mongo;
 	}
 	
+	public void run_copy(Stage s){
+		//create temporal dir on destination
+		List<StageIn> sgins = s.getStagein();
+		for(int i=0; i<sgins.size(); i++){
+			StageIn sgin = s.getStagein().get(i);
+			
+			
+		}
+	}
+	
+	public void run_deploy(Stage s){
+		
+	}
+	
+	public void run_process(Stage s){
+		
+	}
+	
+	public void run_undeploy(Stage s){
+		
+	}
+	
 	public void run(){
 		
 		int nStages = w.getStages().size();

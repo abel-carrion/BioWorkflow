@@ -39,7 +39,7 @@ public class Demo {
 			Planner planner = new Planner(workflow);
 			planner.convert();
 			logger.debug("Initializing mongodb");
-			mongodb mongo = new mongodb();
+			mongodb mongo = new mongodb(); 
 			mongo.createDB("BioWorkflow");
 //			for(int i=0; i<workflow.getStages().size(); i++){
 //				Stage s = workflow.getStages().get(i);
