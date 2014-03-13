@@ -29,8 +29,7 @@ public abstract class Connector {
 		this._host = h;
 		this._environment = e;
 	}
-}
-	
+}	
 	
 	
 	

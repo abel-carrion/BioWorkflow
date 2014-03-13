@@ -18,4 +18,3 @@ public class IM_Connector extends Connector{
 		return "";
 	}
 }
-

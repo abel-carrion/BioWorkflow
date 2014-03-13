@@ -157,8 +157,8 @@ public class Workflow {
 							if(ref.contains("input")){ //We look for the inputs
 								for(int l=0; l<all_stageins.size(); l++){
 									StageIn sgin = all_stageins.get(l);
-									if(StringUtils.equals(ref,sgin.getId()) && (sgin.getValues().length == 1)){
-										new_args = new_args + " " + FilenameUtils.getName(sgin.getValues()[0]);
+									if(StringUtils.equals(ref,sgin.getId()) && (sgin.getValues().size() == 1)){
+										new_args = new_args + " " + FilenameUtils.getName(sgin.getValues().get(0));
 										break;
 									}
 								}
@@ -167,8 +167,8 @@ public class Workflow {
 								for(int l=0; l<all_stageouts.size(); l++){
 									StageOut sgout = all_stageouts.get(l);
 									if(ref.contains(sgout.getId())){
-										if(sgout.getFilterIn()==null && (sgout.getValues().length == 1)){ // The output is a single file with known filename
-											new_args = new_args + " " + sgout.getValues()[0];
+										if(sgout.getFilterIn()==null && (sgout.getValues().size() == 1)){ // The output is a single file with known filename
+											new_args = new_args + " " + sgout.getValues().get(0);
 										}
 										else new_args = new_args + " " + args[k]; //output that cannot be instantiated in deployment time 	
 										break;

@@ -1,10 +1,17 @@
 package enactor;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
+import copy.Scp;
+import copy.Wget;
 import db.mongodb;
+import parsing.jackson.Environment;
+import parsing.jackson.Host;
 import parsing.jackson.Stage;
 import parsing.jackson.Stage.Execution;
 import parsing.jackson.Stage.IOStatus;
@@ -25,24 +32,52 @@ public class Runtime {
 	}
 	
 	public void run_copy(Stage s){
-		//We fill the Stage with the proper command lines
-		//Commandline for dir creation
-		s.setExecution(new ArrayList<Execution>());
-		Execution e = new Execution();
-		e.setPath("mkdir");
-		e.setArguments(SessionID);
-		s.getExecution().add(e);
-		//Commandline for downloading the files
-		for(int i=0; i<s.getStagein().size(); i++){
-			StageIn sgin = s.getStagein().get(i);
-			for(int j=0; j<sgin.getValues().size(); j++){
-				e = new Execution();
-				e.setPath("wget");
-				e.setArguments("--no-check-certificate -P ./" + SessionID + " " + sgin.getValues().get(j));
-				s.getExecution().add(e);
+		Host h = w.queryHost(s);
+		Environment env = w.queryEnv(s);
+		//We create a bash script with the command lines for stage-in
+		try {
+			PrintWriter writer = new PrintWriter(SessionID + ".sh", "UTF-8");
+			writer.println("#!/bin/bash");
+			writer.println("mkdir "+SessionID);
+			writer.println("cd "+SessionID);
+			String[] options = new String[1];
+			options[0] = "--no-check-certificate";
+			for(int i=0; i<s.getStagein().size(); i++){
+				StageIn sgin = s.getStagein().get(i);
+				for(int j=0; j<sgin.getValues().size(); j++){
+					Wget cmd = new Wget(sgin.getValues().get(j));
+					writer.println(cmd.getCommandLine(options));
+				}
 			}
+			writer.close();
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (UnsupportedEncodingException e1) {
+			e1.printStackTrace();
 		}
-		PBS_Connector con = new PBS_Connector(w.queryHost(s),w.queryEnv(s));
+		Scp protocol = new Scp();
+		protocol.copyLocaltoRemote(SessionID + ".sh", h.getCredentials().getUserName(), h.getHostName(), "/home/"+h.getCredentials().getUserName(), SessionID + ".sh", h.getCredentials().getPassword());
+		s.setExecution(new ArrayList<Execution>());
+		List<Execution> executions = s.getExecution();
+		Execution e = new Execution();
+		
+		e = new Execution();
+		e.setPath("chmod");
+		e.setArguments("+x "+SessionID+".sh");
+		executions.add(e);
+		e = new Execution();
+		e.setPath("dos2unix");
+		e.setArguments("./"+SessionID+".sh");
+		executions.add(e);
+		e = new Execution();
+		e.setPath("./"+SessionID+".sh");
+		e.setArguments("&");
+		executions.add(e);
+		e = new Execution();
+		e.setPath("ps");
+		e.setArguments("axf | grep " + SessionID +  " | grep -v grep | awk '{print $1}'");
+		executions.add(e);		
+		PBS_Connector con = new PBS_Connector(h,env);
 		con.submit(s);
 	}
 	

@@ -19,4 +19,12 @@ public class Wget extends Protocol {
 	public String getCommandLine(){
 		return "wget" + " " + URI;
 	}
+	
+	public String getCommandLine(String[] options){
+		String allOptions = "";
+		for(int i=0; i<options.length; i++){
+			allOptions = options[i] + " ";
+		}
+		return "wget " + allOptions + getURI(); 
+	}
 }

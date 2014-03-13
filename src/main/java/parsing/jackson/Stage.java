@@ -140,7 +140,8 @@ public class Stage {
 	public static class StageIn{
 		private String _id;
 		private String _type;
-		private String[] _values;
+		private List<String> _values;
+		private List<IOStatus> _availability;
 		private IOStatus _status;
 		
 		public String getId() {
@@ -155,11 +156,17 @@ public class Stage {
 		public void setType(String type) {
 			this._type = type;
 		}
-		public String[] getValues() {
+		public List<String> getValues() {
 			return _values;
 		}
-		public void setValues(String[] values) {
+		public void setValues(List<String> values) {
 			this._values = values;
+		}
+		public List<IOStatus> getAvailability() {
+			return _availability;
+		}
+		public void setAvailability(List<IOStatus> availability) {
+			this._availability = availability;
 		}
 		public IOStatus getStatus() {
 			return _status;
@@ -177,7 +184,8 @@ public class Stage {
 	public static class StageOut{
 		private String _id;
 		private String _type;
-		private String[] _values;
+		private List<String> _values;
+		private List<IOStatus> _availability;
 		private String _filterIn;
 		private String _replica;
 		private IOStatus _status;
@@ -194,11 +202,17 @@ public class Stage {
 		public void setType(String type) {
 			this._type = type;
 		}
-		public String[] getValues() {
+		public List<String> getValues() {
 			return _values;
 		}
-		public void setValues(String[] values) {
+		public void setValues(List<String> values) {
 			this._values = values;
+		}
+		public List<IOStatus> getAvailability() {
+			return _availability;
+		}
+		public void setAvailability(List<IOStatus> availability) {
+			this._availability = availability;
 		}
 		public String getFilterIn() {
 			return _filterIn;
