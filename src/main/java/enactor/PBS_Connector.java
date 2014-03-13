@@ -17,27 +17,33 @@ import com.jcraft.jsch.Session;
 
 public class PBS_Connector extends Connector{
 	
+	private String userName;
+	private String hostName;
+	private JSch jsch;
+	private Session session;
+	private ChannelExec channel;
+	
 	public PBS_Connector(Host h, Environment e) {
 		super(h, e);
+		userName = this._host.getCredentials().getUserName();
+		hostName = this._host.getHostName();
+		//configure ssh access
+		jsch = new JSch();
+				
 	}
 
 	public String submit(Stage s){
 		
-		Host host = this._host;
-		String userName = host.getCredentials().getUserName();
-		String hostName = host.getHostName();
+	    this.session = null;
+	    this.channel = null;
 		
-		//configure ssh access
-		JSch jsch = new JSch();
-		Session session = null;
-		ChannelExec channel = null;
 		try {
 			session = jsch.getSession(userName, hostName, 22);
-			session.setPassword(host.getCredentials().getPassword());
+			session.setPassword(this._host.getCredentials().getPassword());
 			session.setConfig("StrictHostKeyChecking", "no");
 			session.connect(10*1000);
-		} catch (JSchException e2) {
-			e2.printStackTrace();
+		} catch (JSchException e) {
+			e.printStackTrace();
 		}
 	
 		//submit all the executions of the stage
@@ -57,8 +63,8 @@ public class PBS_Connector extends Connector{
 					System.out.println(msg);
 				}
 			    channel.disconnect();
-			} catch (Exception e2) {		
-				e2.printStackTrace();
+			} catch (Exception ex) {		
+				ex.printStackTrace();
 			}
 		}
 		// Disconnect (close connection, clean up system resources)
@@ -68,21 +74,15 @@ public class PBS_Connector extends Connector{
 	
 	public String job_status(String jobID){
 		
-		Host host = this._host;
-		String userName = host.getCredentials().getUserName();
-		String hostName = host.getHostName();
-		
-		//configure ssh access
-		JSch jsch = new JSch();
 		Session session = null;
 		ChannelExec channel = null;
 		try {
 			session = jsch.getSession(userName, hostName, 22);
-			session.setPassword(host.getCredentials().getPassword());
+			session.setPassword(this._host.getCredentials().getPassword());
 			session.setConfig("StrictHostKeyChecking", "no");
 			session.connect(10*1000);
-		} catch (JSchException e2) {
-			e2.printStackTrace();
+		} catch (JSchException e) {
+			e.printStackTrace();
 		}
 		//query for the status of the stage
 		String msg = null;
@@ -99,14 +99,17 @@ public class PBS_Connector extends Connector{
 				System.out.println(msg);
 			}
 		    channel.disconnect();
-		} catch (Exception e2) {		
-			e2.printStackTrace();
+		} catch (Exception e) {		
+			e.printStackTrace();
 		}
 		// Disconnect (close connection, clean up system resources)
 		session.disconnect();
-		if(msg==null)
+		if(msg==null){
 			return "FINISHED"; //TODO: Check if the job has failed
-		else return "RUNNING";
+		}
+		else{
+			return "RUNNING";
+		}
 	}
 	
 }
