@@ -24,24 +24,23 @@ public class Runtime {
 	
 	private Workflow w;
 	private mongodb mongo;
-	private String SessionID;
+	private String executionID;
 	
 	public Runtime(Workflow w, mongodb mongo){
 		this.w = w;
-		this.mongo = mongo;
-		this.SessionID = System.currentTimeMillis()+"";	
+		this.mongo = mongo;	
 	}
 	
 	public void run_copy(Stage s){
 		Host h = w.queryHost(s);
 		Environment env = w.queryEnv(s);
 		//We create a bash script with the command lines for stage-in
-		String scriptName = SessionID + ".sh";
+		String scriptName = executionID + ".sh";
 		try {
 			PrintWriter writer = new PrintWriter(scriptName, "UTF-8");
 			writer.println("#!/bin/bash");
-			writer.println("mkdir "+SessionID);
-			writer.println("cd "+SessionID);
+			writer.println("mkdir "+executionID);
+			writer.println("cd "+executionID);
 			String[] options = new String[1];
 			options[0] = "--no-check-certificate";
 			for(int i=0; i<s.getStagein().size(); i++){
@@ -80,7 +79,7 @@ public class Runtime {
 		executions.add(e);
 		e = new Execution();
 		e.setPath("ps");
-		e.setArguments("axf | grep " + SessionID +  " | grep -v grep | awk '{print $1}'");
+		e.setArguments("axf | grep " + executionID +  " | grep -v grep | awk '{print $1}'");
 		executions.add(e);		
 		PBS_Connector con = new PBS_Connector(h,env);
 		con.submit(s);
@@ -104,12 +103,12 @@ public class Runtime {
 		}
 		else maxCores=1;
 		Environment env = w.queryEnv(s);
-		String scriptName = SessionID + ".pbs";
+		String scriptName = executionID + ".pbs";
 		//We create a bash script with the command lines for stage-in
 		try {
 			PrintWriter writer = new PrintWriter(scriptName, "UTF-8");
 			writer.println("#!/bin/bash");
-			writer.println("cd "+SessionID);
+			writer.println("cd "+executionID);
 			for(int i=0; i<s.getExecution().size(); i++){
 				Execution ex = s.getExecution().get(i);
 				writer.println(ex.getPath()+ex.getArguments());
@@ -147,10 +146,13 @@ public class Runtime {
 	
 	public void run(){
 		
-		//ONLY FOR TESTING PURPOSES 
-		run_copy(w.getStages().get(3));
-		run_process(w.getStages().get(0));
-		// ONLY FOR TESTING PURPOSES
+//		//ONLY FOR TESTING PURPOSES 
+//		Scp protocol = new Scp();
+//		protocol.copyRemotetoRemote("acarrion", "ngiesuiro.i3m.upv.es", "/home/acarrion/", "RECORDATORIO.txt", "acarrion", "odin.itaca.upv.es", "/home/acarrion/", "RECORDATORIO_copy.txt", "", "", executionID);
+//		run_copy(w.getStages().get(3));
+//		run_process(w.getStages().get(0));
+//		// ONLY FOR TESTING PURPOSES
+		
 		int nStages = w.getStages().size();
 		while(nStages!=0){ //there are pending stages to be executed
 			for(int i=0; i<w.getStages().size(); i++){
@@ -167,6 +169,7 @@ public class Runtime {
 						}
 					}
 					if(isEnabled){
+						this.executionID = System.currentTimeMillis()+""; //Each time a stage is executed, a new ExecutionID is generated
 						mongo.updateStageStatus(s, Status.RUNNING);
 					}
 				}

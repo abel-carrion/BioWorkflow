@@ -251,6 +251,4 @@ public class Workflow {
 		}
 		return true;
 	}
-
-	
-}
+}  
