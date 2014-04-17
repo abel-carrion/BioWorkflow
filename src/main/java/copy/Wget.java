@@ -1,5 +1,7 @@
 package copy;
 
+import parsing.jackson.Stage.Execution;
+
 public class Wget extends Protocol {
 	
 	private String URI;
@@ -16,15 +18,19 @@ public class Wget extends Protocol {
 		this.URI = URI;
 	}
 	
-	public String getCommandLine(){
-		return "wget" + " " + URI;
+	public Execution getCommandLine(){
+		Execution e = new Execution();
+		e.setPath("wget "); e.setArguments(getURI());
+		return e;
 	}
 	
-	public String getCommandLine(String[] options){
+	public Execution getCommandLine(String[] options){
 		String allOptions = "";
 		for(int i=0; i<options.length; i++){
 			allOptions = options[i] + " ";
 		}
-		return "wget " + allOptions + getURI(); 
+		Execution e = new Execution();
+		e.setPath("wget "); e.setArguments(allOptions +  getURI());
+		return e;
 	}
 }

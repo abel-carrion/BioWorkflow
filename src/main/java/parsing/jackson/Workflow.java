@@ -195,6 +195,16 @@ public class Workflow {
 		return null;
 	}
 	
+	public Host queryHost(String userName1, String hostName){
+		for(int i=0; i<this._hosts.size();i++){
+			Host h = this._hosts.get(i);
+			if(h.getCredentials().getUserName().equals(userName1) && h.getHostName().equals(hostName)){
+				return h;
+			}
+		}
+		return null;
+	}
+	
 	public Environment queryEnv(Stage s){
 		for(int i=0; i<this._environments.size(); i++){
 			Environment e = this._environments.get(i);

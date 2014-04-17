@@ -24,6 +24,7 @@ public class Stage {
 	private Status _status;
 	private Date _startDate;
 	private Date _endDate;
+	private String _executionID;
 	
 	@Embedded
 	public static class disk{
@@ -141,7 +142,7 @@ public class Stage {
 		private String _id;
 		private String _type;
 		private List<String> _values;
-		private List<IOStatus> _availability;
+		private IOStatus _availability;
 		private IOStatus _status;
 		
 		public String getId() {
@@ -162,10 +163,10 @@ public class Stage {
 		public void setValues(List<String> values) {
 			this._values = values;
 		}
-		public List<IOStatus> getAvailability() {
+		public IOStatus getAvailability() {
 			return _availability;
 		}
-		public void setAvailability(List<IOStatus> availability) {
+		public void setAvailability(IOStatus availability) {
 			this._availability = availability;
 		}
 		public IOStatus getStatus() {
@@ -185,7 +186,6 @@ public class Stage {
 		private String _id;
 		private String _type;
 		private List<String> _values;
-		private List<IOStatus> _availability;
 		private String _filterIn;
 		private String _replica;
 		private IOStatus _status;
@@ -207,12 +207,6 @@ public class Stage {
 		}
 		public void setValues(List<String> values) {
 			this._values = values;
-		}
-		public List<IOStatus> getAvailability() {
-			return _availability;
-		}
-		public void setAvailability(List<IOStatus> availability) {
-			this._availability = availability;
 		}
 		public String getFilterIn() {
 			return _filterIn;
@@ -274,13 +268,18 @@ public class Stage {
 	public void setEndDate(Date endDate) {
 		this._endDate = endDate;
 	}
+	public String getExecutionID() {
+		return _executionID;
+	}
+	public void setExecutionID(String executionID) {
+		this._executionID = executionID;
+	}
 	public List<Execution> getExecution() {
 		return _execution;
 	}
 	public void setExecution(List<Execution> execution) {
 		this._execution = execution;
 	}
-
 	public Retries getRetries() {
 		return _retries;
 	}

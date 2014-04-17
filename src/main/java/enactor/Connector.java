@@ -16,18 +16,16 @@ import parsing.jackson.Environment;
 import parsing.jackson.Host;
 import parsing.jackson.Stage;
 import parsing.jackson.Stage.Execution;
+import parsing.jackson.Workflow;
 
 public abstract class Connector {
 	
-	public Host _host;
-	public Environment _environment;
+	public Workflow workflow;
+	public Stage stage;
 	
-	public abstract String submit(Stage s);
-	public abstract String job_status(String job_id);
-	
-	public Connector(Host h, Environment e){
-		this._host = h;
-		this._environment = e;
+	public Connector(Workflow w, Stage s){
+		this.workflow = w;
+		this.stage = s;
 	}
 }	
 	

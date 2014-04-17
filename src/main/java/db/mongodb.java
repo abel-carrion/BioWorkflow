@@ -54,10 +54,23 @@ public class mongodb extends database {
     	return s.getStagein().get(nElement).getStatus();
     }
     
-    public void updateStageStatus(Stage stageId, Stage.Status status){
+    public String queryExecutionID(String stageId){
+    	Query<Stage> q = datastore.find(Stage.class).field("_id").equal(stageId);
+    	Stage s = q.get();
+    	return s.getExecutionID();
+    }
+    
+    public void updateStageStatus(String stageId, Stage.Status status){
     	Query<Stage> q = datastore.find(Stage.class).field("_id").equal(stageId);
     	Stage s = q.get();
     	s.setStatus(status);
+    	datastore.save(s);
+    }
+    
+    public void updateExecutionID(String stageId, String executionID){
+    	Query<Stage> q = datastore.find(Stage.class).field("_id").equal(stageId);
+    	Stage s = q.get();
+    	s.setExecutionID(executionID);
     	datastore.save(s);
     }
     
