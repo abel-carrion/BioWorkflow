@@ -49,20 +49,70 @@ public class Runtime {
 	}
 	
 	public void run_stage(Stage s, String executionID){
-		// Submit the stage using the right connector
+		//Submit the stage using the right connector
 		Host h = w.queryHost(s);
 		switch (h.getSubType()) {
         case "PBS":  
-        		 PBS_Connector con = new PBS_Connector(this.w,s);
-        		 con.submit(executionID);
+        		 PBS_Connector con = new PBS_Connector(this.w,s,executionID);
+        		 con.submit();
                  break;
         default: 
                  break;
 		}
 	}
 	
+	public Stage.Status get_status(Stage s, String executionID){
+		//Query the status of the stage using the right connector
+		Host h = w.queryHost(s);
+		Stage.Status status = null;
+		switch (h.getSubType()) {
+        case "PBS":  
+        		 PBS_Connector con = new PBS_Connector(this.w,s,executionID);
+        		 status = con.job_status();
+                 break;
+        default: 
+                 break;
+		}
+		return status;
+	}
+	
 	public void run(){
-		//TODO: Implement main loop of runtime
+		int nStages = w.getStages().size();
+		while(nStages!=0){ //there are pending stages to be executed
+			for(int i=0; i<w.getStages().size(); i++){
+				Stage s = w.getStages().get(i);
+				Status status = mongo.queryStageStatus(s.getId());
+				if(status==Stage.Status.IDLE){
+					List<StageIn> stageins = s.getStagein();
+					boolean isEnabled = true; //by default, an IDLE stage is not enabled
+					for(int j=0; j<stageins.size(); j++){
+						IOStatus sginStatus = mongo.queryStageInStatus(s.getId(),j); //Query the status of the stage-in on the database
+						if(sginStatus.equals(IOStatus.DISABLED)){
+							isEnabled = false;
+							break;
+						}
+					}
+					if(isEnabled){
+						String executionID = System.currentTimeMillis()+""; //Each time a stage is executed, a new ExecutionID is generated
+						mongo.updateExecutionID(s.getId(), executionID);
+						mongo.updateStageStatus(s.getId(), Status.RUNNING);
+						run_stage(s,executionID);
+					}
+				}
+				else if(status==Stage.Status.RUNNING){
+					Stage.Status currentStatus = get_status(s,mongo.queryExecutionID(s.getId()));
+					if(currentStatus.equals(Stage.Status.FINISHED)){
+						mongo.updateStageStatus(s.getId(), currentStatus);
+						nStages=nStages-1;
+					}
+				}
+			}
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 }

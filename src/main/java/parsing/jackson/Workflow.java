@@ -7,6 +7,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 
 import parsing.jackson.Stage.Execution;
+import parsing.jackson.Stage.IOStatus;
 import parsing.jackson.Stage.Node;
 import parsing.jackson.Stage.StageIn;
 import parsing.jackson.Stage.StageOut;
@@ -260,5 +261,14 @@ public class Workflow {
 			}
 		}
 		return true;
+	}
+	
+	public void enableStageIns(StageOut stgout){
+		for(int i=0; i<this.all_stageins.size(); i++){
+			StageIn stgin = this.all_stageins.get(i);
+			if(stgin.getId().equals("#"+stgout.getId())){
+				stgin.setStatus(IOStatus.ENABLED);
+			}
+		}
 	}
 }  

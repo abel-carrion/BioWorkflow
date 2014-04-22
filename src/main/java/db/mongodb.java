@@ -5,6 +5,7 @@ import java.net.UnknownHostException;
 import parsing.jackson.Stage;
 import parsing.jackson.Stage.IOStatus;
 import parsing.jackson.Stage.StageIn;
+import parsing.jackson.Stage.StageOut;
 
 import com.google.code.morphia.Datastore;
 import com.google.code.morphia.Morphia;
@@ -72,6 +73,28 @@ public class mongodb extends database {
     	Stage s = q.get();
     	s.setExecutionID(executionID);
     	datastore.save(s);
+    }
+    /////////////////////////////////////// NEW METHODS ////////////////////////////////////////////
+    public Stage queryStage(Stage s){
+    	Query<Stage> q = datastore.find(Stage.class).field("_id").equal(s.getId());
+    	return q.get();
+    }
+    public StageIn queryStageIn(StageIn stgin){
+    	Query<StageIn> q = datastore.find(StageIn.class).field("_id").equal(stgin.getId());
+    	return q.get();
+    }
+    public StageOut queryStageOut(StageOut stgout){
+    	Query<StageOut> q = datastore.find(StageOut.class).field("_id").equal(stgout.getId());
+    	return q.get();
+    }
+    public void updateStage(Stage s){
+    	datastore.save(s);
+    }
+    public void updateStageIn(StageIn stgin){
+    	datastore.save(stgin);
+    }
+    public void updateStageOut(StageOut stgout){
+    	datastore.save(stgout);
     }
     
 }

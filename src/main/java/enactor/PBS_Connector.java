@@ -20,6 +20,7 @@ import parsing.jackson.Environment;
 import parsing.jackson.Host;
 import parsing.jackson.Stage;
 import parsing.jackson.Stage.Execution;
+import parsing.jackson.Stage.IOStatus;
 import parsing.jackson.Stage.Node;
 import parsing.jackson.Stage.StageIn;
 import parsing.jackson.Stage.StageOut;
@@ -42,17 +43,19 @@ public class PBS_Connector extends Connector{
 	private String hostName;
 	private String passWord;
 	private SSH_Connector ssh;
+	private String executionID;
 	
-	public PBS_Connector(Workflow w, Stage s) {
+	public PBS_Connector(Workflow w, Stage s, String executionID) {
 		super(w,s);
 	    host = this.workflow.queryHost(this.stage);
 		userName = host.getCredentials().getUserName();
 		passWord = host.getCredentials().getPassword();
 		hostName = host.getHostName();
+		this.executionID = executionID;
 		ssh = new SSH_Connector(this.userName, this.hostName, this.passWord);
 	}
 	
-	public void preprocess_copyStage(String executionID){
+	public void stageIn(String executionID){
 		
 		List <Execution> executions = new ArrayList<Execution>();
 		String[] options = new String[1];
@@ -97,15 +100,15 @@ public class PBS_Connector extends Connector{
 		this.stage.setExecution(executions);
 	}
 
-	public void submit(String executionID){
+	public void submit(){
 		
 		String StageID = this.stage.getId();
 		
 		if(StageID.startsWith("copy_")){ 
-			preprocess_copyStage(executionID);
+			stageIn(executionID);
 			//The copy command requires a directory named executionID to exist
 			Execution e = new Execution(); e.setPath("mkdir"); e.setArguments(executionID);
-			this.ssh.executeCommandLine(e);
+			this.ssh.executeCommandLine(executionID,e);
 		}
 		
 		// We create a script from a template with the commands that must be executed
@@ -145,9 +148,9 @@ public class PBS_Connector extends Connector{
 		
 		// Change permissions, reformat script and execute
 		e = new Execution(); e.setPath("chmod"); e.setArguments("+x " + scriptName);
-		this.ssh.executeCommandLine(e);
+		this.ssh.executeCommandLine(executionID,e);
 		e = new Execution(); e.setPath("dos2unix"); e.setArguments(scriptName);
-		this.ssh.executeCommandLine(e);
+		this.ssh.executeCommandLine(executionID,e);
 		//Calculate the maximum number of cores for this stage
 		int maxCores=Integer.MIN_VALUE;
 		List<Node> nodes = this.stage.getNodes();
@@ -159,19 +162,45 @@ public class PBS_Connector extends Connector{
 		}
 		else maxCores=1;
 		e = new Execution(); e.setPath("qsub"); e.setArguments("-l"+" nodes="+maxCores+" "+scriptName+" 1>"+executionID+".out"+" 2>"+executionID+".err");
-		this.ssh.executeCommandLine(e);
+		this.ssh.executeCommandLine(executionID,e);
 			
 	}
 	
-	public Stage.Status job_status(String executionID){
+	public void stageOut(){
+		Stage s = this.stage;
+		for(int i=0; i<s.getStageOut().size(); i++){
+			StageOut stgout = s.getStageOut().get(i);
+			List<String> values = new ArrayList<String>();
+			if(stgout.getFilterIn()!=null){ //It's necessary to get the list of files that match the filter
+				Execution e = new Execution();
+				e.setPath("ls"); e.setArguments(stgout.getFilterIn());
+				String[] files = this.ssh.executeCommandLine(executionID,e).split(" ");
+				for(int j=0; j<files.length; j++){
+					values.add(userName+"@"+hostName+":"+executionID+"/"+files[j]);
+				}
+			}
+			else if(stgout.getType().equals("File")){
+				for(int j=0; j<stgout.getValues().size(); j++){
+					values.add(userName+"@"+hostName+":"+executionID+"/"+stgout.getValues().get(j));
+				}
+			}
+			stgout.setValues(values);
+			stgout.setStatus(IOStatus.ENABLED);
+			// We enable all the stage-ins referencing this stageout
+			workflow.enableStageIns(stgout);
+		}	
+	}
+	
+	public Stage.Status job_status(){
 		
 		Execution e = new Execution(); e.setPath("cat"); e.setArguments(executionID+".out");
-		String stdout = this.ssh.executeCommandLine(e);
+		String stdout = this.ssh.executeCommandLine(executionID,e);
 		
 		if(stdout.contains("Script " + executionID + " exited with code")){
 			return Status.FAILED;
 		}
 		else if(stdout.contains("Script "+executionID+".sh has exited with code 0")){
+			stageOut();
 			return Status.FINISHED;
 		}
 		else return Status.RUNNING;

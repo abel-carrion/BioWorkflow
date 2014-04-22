@@ -142,7 +142,6 @@ public class Stage {
 		private String _id;
 		private String _type;
 		private List<String> _values;
-		private IOStatus _availability;
 		private IOStatus _status;
 		
 		public String getId() {
@@ -163,16 +162,10 @@ public class Stage {
 		public void setValues(List<String> values) {
 			this._values = values;
 		}
-		public IOStatus getAvailability() {
-			return _availability;
-		}
-		public void setAvailability(IOStatus availability) {
-			this._availability = availability;
-		}
 		public IOStatus getStatus() {
 			return _status;
 		}
-		public void set_status(IOStatus status) {
+		public void setStatus(IOStatus status) {
 			this._status = status;
 		}
 		
