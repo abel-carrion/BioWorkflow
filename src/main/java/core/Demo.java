@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import db.mongodb;
 import parsing.jackson.Stage;
+import parsing.jackson.Stage.IOStatus;
 import parsing.jackson.Stage.StageIn;
 import parsing.jackson.Stage.StageOut;
 import parsing.jackson.Workflow;
@@ -40,28 +41,29 @@ public class Demo {
 			logger.debug("Initializing mongodb");
 			mongodb mongo = new mongodb(); 
 			mongo.createDB("BioWorkflow");
-//			for(int i=0; i<workflow.getStages().size(); i++){
-//				Stage s = workflow.getStages().get(i);
-//				s.setStatus(Stage.Status.IDLE);
-//				for(int j=0; j<s.getStagein().size(); j++){
-//					StageIn sgin = s.getStagein().get(j);
-//					sgin.setStatus(Stage.IOStatus.DISABLED);
-//				}
-//				for(int j=0; j<s.getStageOut().size(); j++){
-//					StageOut sgout = s.getStageOut().get(j);
-//					sgout.setStatus(Stage.IOStatus.DISABLED);
-//				}
-//				mongo.insert(s);
-//			}
+			
+			// Initialization of the workflow
+			for(int i=0; i<workflow.getStages().size(); i++){
+				Stage s = workflow.getStages().get(i);
+				s.setStatus(Stage.Status.IDLE);
+				for(int j=0; j<s.getStagein().size(); j++){
+					StageIn sgin = s.getStagein().get(j);
+					sgin.setStatus(Stage.IOStatus.DISABLED);
+				}
+				for(int j=0; j<s.getStageOut().size(); j++){
+					StageOut sgout = s.getStageOut().get(j);
+					sgout.setStatus(Stage.IOStatus.DISABLED);
+				}
+
+			}
+			
+			workflow.getStages().get(3).getStagein().get(0).setStatus(IOStatus.ENABLED);
+			
 			Runtime runtime = new Runtime(workflow, mongo);
 			runtime.run();
 			// workflow representation
 			//GraphPlotter plotter = new GraphPlotter();
 			//plotter.plot(workflow);
-			// Execution of the workflow
-			//PBS_Connector conn = new PBS_Connector(workflow.getHosts(),workflow.getEnvironments());
-			// Execution of the first stage of the workflow
-			//conn.submit(workflow.getStages()[0], workflow.getStages());
 			logger.debug("The execution of {} has finished correctly", Demo.class.getName());
 			
 		} catch (JsonParseException e) {

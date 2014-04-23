@@ -22,8 +22,18 @@ public class SSH_Connector {
 	Session session = null;
 	ChannelExec channel = null;
 	ChannelSftp channelSftp = null;
+	String userName = null;
+	String hostName = null;
+	String passWord = null;
 	
 	public SSH_Connector(String userName, String hostName, String passWord){
+		this.userName = userName;
+		this.hostName = hostName;
+		this.passWord = passWord;
+		jsch = new JSch();
+	}
+	
+	public void initSession(){
 		try {
 			session = jsch.getSession(userName, hostName, 22);
 			session.setPassword(passWord);
@@ -36,25 +46,27 @@ public class SSH_Connector {
 	public String executeCommandLine(String executionDir, Execution e){
 		 
 		try {
+			initSession();
 			session.connect(10*1000);
 			channel=(ChannelExec) session.openChannel("exec");
-			String cmdLine = "cd " + executionDir;
-			// channel.connect(); - fifteen second timeout
-			channel.connect(15 * 1000);
-			channel.disconnect();
+			String cdDircmd = "cd " + executionDir;
+//			// channel.connect(); - fifteen second timeout
 			String msg = null;
 			String stdout = "";
-			cmdLine = e.getPath() + " " + e.getArguments();
+			String cmdLine = e.getPath() + " " + e.getArguments();
 			BufferedReader in=new BufferedReader(new InputStreamReader(channel.getInputStream()));
 			InputStream is = new ByteArrayInputStream(cmdLine.getBytes());
-			channel.setCommand(cmdLine);
+			if(e.getPath().equals("mkdir")){
+				channel.setCommand(cmdLine);
+			}
+			else channel.setCommand(cdDircmd+" && "+cmdLine);
 			// channel.connect(); - fifteen second timeout
 			channel.connect(15 * 1000);
-			msg=null;
-			while((msg=in.readLine())!=null){
-				System.out.println(msg);
-				stdout = stdout + msg;
-			}
+//			msg=null;
+//			while((msg=in.readLine())!=null){
+//				System.out.println(msg);
+//				stdout = stdout + msg;
+//			}
 		    channel.disconnect();
 		    session.disconnect();
 		    return stdout;
@@ -67,11 +79,14 @@ public class SSH_Connector {
 	public void uploadFile(String remoteDir, Execution e){
 		
 		try {
+			initSession();
+			session.connect(10*1000);
 			channelSftp = (ChannelSftp)session.openChannel("sftp");
 			channelSftp.connect();
 			channelSftp.cd(remoteDir);
 			channelSftp.put(new FileInputStream(e.getArguments()), e.getArguments());
 			channelSftp.disconnect();
+			session.disconnect();
 		} catch (JSchException e1) {
 			e1.printStackTrace();
 		} catch (SftpException e1) {

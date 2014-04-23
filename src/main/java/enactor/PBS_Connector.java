@@ -105,10 +105,10 @@ public class PBS_Connector extends Connector{
 		String StageID = this.stage.getId();
 		
 		if(StageID.startsWith("copy_")){ 
-			stageIn(executionID);
-			//The copy command requires a directory named executionID to exist
+			//A copy stage requires a directory named executionID to exist
 			Execution e = new Execution(); e.setPath("mkdir"); e.setArguments(executionID);
 			this.ssh.executeCommandLine(executionID,e);
+			stageIn(executionID);
 		}
 		
 		// We create a script from a template with the commands that must be executed
@@ -122,7 +122,7 @@ public class PBS_Connector extends Connector{
 				this.ssh.uploadFile(executionID, e);
 			}
 			else{
-				commands = commands + "command["+ncommands+"]="+e.getPath()+" "+e.getArguments();
+				commands = commands + "commands["+ncommands+"]='"+e.getPath()+" "+e.getArguments()+"'";
 				ncommands++;
 			}
 		}
@@ -145,6 +145,7 @@ public class PBS_Connector extends Connector{
 		// We upload the script to be executed
 		Execution e = new Execution(); e.setArguments(scriptName);
 		this.ssh.uploadFile(executionID, e);
+		//TODO: Delete script from local disk
 		
 		// Change permissions, reformat script and execute
 		e = new Execution(); e.setPath("chmod"); e.setArguments("+x " + scriptName);

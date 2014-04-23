@@ -43,7 +43,7 @@ public class Runtime {
 	private Workflow w;
 	private mongodb mongo;
 	
-	Runtime(Workflow w, mongodb mongo){
+	public Runtime(Workflow w, mongodb mongo){
 		this.w = w;
 		this.mongo = mongo;
 	}
@@ -81,12 +81,12 @@ public class Runtime {
 		while(nStages!=0){ //there are pending stages to be executed
 			for(int i=0; i<w.getStages().size(); i++){
 				Stage s = w.getStages().get(i);
-				Status status = mongo.queryStageStatus(s.getId());
+				Status status = s.getStatus();
 				if(status==Stage.Status.IDLE){
 					List<StageIn> stageins = s.getStagein();
 					boolean isEnabled = true; //by default, an IDLE stage is not enabled
 					for(int j=0; j<stageins.size(); j++){
-						IOStatus sginStatus = mongo.queryStageInStatus(s.getId(),j); //Query the status of the stage-in on the database
+						IOStatus sginStatus = stageins.get(j).getStatus(); //Query the status of the stage-in on the database
 						if(sginStatus.equals(IOStatus.DISABLED)){
 							isEnabled = false;
 							break;
@@ -94,15 +94,15 @@ public class Runtime {
 					}
 					if(isEnabled){
 						String executionID = System.currentTimeMillis()+""; //Each time a stage is executed, a new ExecutionID is generated
-						mongo.updateExecutionID(s.getId(), executionID);
-						mongo.updateStageStatus(s.getId(), Status.RUNNING);
+						s.setExecutionID(executionID);
+						s.setStatus(Status.RUNNING);
 						run_stage(s,executionID);
 					}
 				}
 				else if(status==Stage.Status.RUNNING){
-					Stage.Status currentStatus = get_status(s,mongo.queryExecutionID(s.getId()));
+					Stage.Status currentStatus = get_status(s,s.getExecutionID());
 					if(currentStatus.equals(Stage.Status.FINISHED)){
-						mongo.updateStageStatus(s.getId(), currentStatus);
+						s.setStatus(currentStatus);
 						nStages=nStages-1;
 					}
 				}
