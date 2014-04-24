@@ -43,7 +43,7 @@ public class SSH_Connector {
 		}	
 	}
 	
-	public String executeCommandLine(String executionDir, Execution e){
+	public String executeCommandLine(String executionDir, Execution e, boolean silentCmd){
 		 
 		try {
 			initSession();
@@ -62,11 +62,13 @@ public class SSH_Connector {
 			else channel.setCommand(cdDircmd+" && "+cmdLine);
 			// channel.connect(); - fifteen second timeout
 			channel.connect(15 * 1000);
-//			msg=null;
-//			while((msg=in.readLine())!=null){
-//				System.out.println(msg);
-//				stdout = stdout + msg;
-//			}
+			if(!silentCmd){
+				msg=null;
+				while((msg=in.readLine())!=null){
+					System.out.println(msg);
+					stdout = stdout + msg +  " ";
+				}
+			}
 		    channel.disconnect();
 		    session.disconnect();
 		    return stdout;

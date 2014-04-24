@@ -58,6 +58,7 @@ public class Demo {
 			}
 			
 			workflow.getStages().get(3).getStagein().get(0).setStatus(IOStatus.ENABLED);
+			workflow.create_stageLists(); //Update stage list after using Planner
 			
 			Runtime runtime = new Runtime(workflow, mongo);
 			runtime.run();

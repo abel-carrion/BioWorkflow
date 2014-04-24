@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -15,6 +16,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.io.FilenameUtils;
 
 import parsing.jackson.Environment;
 import parsing.jackson.Host;
@@ -80,14 +83,17 @@ public class PBS_Connector extends Connector{
 					int indexOfColon = url.indexOf(':');
 					String userNameURL = url.substring(0,indexOfAt);
 					String hostNameURL = url.substring(indexOfAt+1, indexOfColon);
-					File f = new File(url.substring(indexOfColon+1,url.length()));
+					String path = url.substring(indexOfColon+1,url.length());
 					if(this.hostName.equals(hostNameURL) && this.userName.equals(userNameURL)){ //Same host and username, "copy" can be used
-						Copy copy = new Copy(f.getAbsolutePath());
+						Copy copy = new Copy(path);
 						executions.add(copy.getCommandLine());
 					}
 					else{
 						Host h1 = this.workflow.queryHost(userNameURL, hostNameURL);
-						Scp scp = new Scp(userNameURL, hostNameURL, f.getParent(), f.getName(), this.userName, this.hostName, executionID, f.getName(), h1.getCredentials().getPassword(), this.passWord, executionID);
+						int separatorIndex = path.lastIndexOf("/");
+						String parentDir = path.substring(0, separatorIndex) ;
+						String fileName = path.substring(separatorIndex+1, path.length());
+						Scp scp = new Scp(userNameURL, hostNameURL, parentDir, fileName, this.userName, this.hostName, executionID, fileName, h1.getCredentials().getPassword(), this.passWord, executionID);
 						List<Execution> scpExecs= scp.getExecutions(executionID);
 						for(int k=0; k<scpExecs.size(); k++){
 							executions.add(scpExecs.get(k));
@@ -107,7 +113,7 @@ public class PBS_Connector extends Connector{
 		if(StageID.startsWith("copy_")){ 
 			//A copy stage requires a directory named executionID to exist
 			Execution e = new Execution(); e.setPath("mkdir"); e.setArguments(executionID);
-			this.ssh.executeCommandLine(executionID,e);
+			this.ssh.executeCommandLine(executionID,e,true);
 			stageIn(executionID);
 		}
 		
@@ -122,7 +128,7 @@ public class PBS_Connector extends Connector{
 				this.ssh.uploadFile(executionID, e);
 			}
 			else{
-				commands = commands + "commands["+ncommands+"]='"+e.getPath()+" "+e.getArguments()+"'";
+				commands = commands + "commands["+ncommands+"]='"+e.getPath()+" "+e.getArguments()+"'\n";
 				ncommands++;
 			}
 		}
@@ -149,9 +155,9 @@ public class PBS_Connector extends Connector{
 		
 		// Change permissions, reformat script and execute
 		e = new Execution(); e.setPath("chmod"); e.setArguments("+x " + scriptName);
-		this.ssh.executeCommandLine(executionID,e);
+		this.ssh.executeCommandLine(executionID,e,true);
 		e = new Execution(); e.setPath("dos2unix"); e.setArguments(scriptName);
-		this.ssh.executeCommandLine(executionID,e);
+		this.ssh.executeCommandLine(executionID,e,true);
 		//Calculate the maximum number of cores for this stage
 		int maxCores=Integer.MIN_VALUE;
 		List<Node> nodes = this.stage.getNodes();
@@ -163,7 +169,7 @@ public class PBS_Connector extends Connector{
 		}
 		else maxCores=1;
 		e = new Execution(); e.setPath("qsub"); e.setArguments("-l"+" nodes="+maxCores+" "+scriptName+" 1>"+executionID+".out"+" 2>"+executionID+".err");
-		this.ssh.executeCommandLine(executionID,e);
+		this.ssh.executeCommandLine(executionID,e,false);
 			
 	}
 	
@@ -175,14 +181,15 @@ public class PBS_Connector extends Connector{
 			if(stgout.getFilterIn()!=null){ //It's necessary to get the list of files that match the filter
 				Execution e = new Execution();
 				e.setPath("ls"); e.setArguments(stgout.getFilterIn());
-				String[] files = this.ssh.executeCommandLine(executionID,e).split(" ");
+				String[] files = this.ssh.executeCommandLine(executionID,e,false).split(" ");
 				for(int j=0; j<files.length; j++){
 					values.add(userName+"@"+hostName+":"+executionID+"/"+files[j]);
 				}
 			}
 			else if(stgout.getType().equals("File")){
 				for(int j=0; j<stgout.getValues().size(); j++){
-					values.add(userName+"@"+hostName+":"+executionID+"/"+stgout.getValues().get(j));
+					String url = stgout.getValues().get(j);
+					values.add(userName+"@"+hostName+":"+executionID+"/"+FilenameUtils.getName(url));
 				}
 			}
 			stgout.setValues(values);
@@ -195,7 +202,7 @@ public class PBS_Connector extends Connector{
 	public Stage.Status job_status(){
 		
 		Execution e = new Execution(); e.setPath("cat"); e.setArguments(executionID+".out");
-		String stdout = this.ssh.executeCommandLine(executionID,e);
+		String stdout = this.ssh.executeCommandLine(executionID,e,false);
 		
 		if(stdout.contains("Script " + executionID + " exited with code")){
 			return Status.FAILED;

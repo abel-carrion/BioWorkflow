@@ -20,7 +20,7 @@ public class Copy extends Protocol {
 	
 	public Execution getCommandLine(){
 		Execution e = new Execution();
-		e.setPath("copy "); e.setArguments(getPath());
+		e.setPath("cp "); e.setArguments(getPath() + " .");
 		return e;
 	}
 	
@@ -30,7 +30,7 @@ public class Copy extends Protocol {
 			allOptions = options[i] + " ";
 		}
 		Execution e = new Execution();
-		e.setPath("copy "); e.setArguments(allOptions +  getPath());
+		e.setPath("cp "); e.setArguments(allOptions +  getPath() + " .");
 		return e;
 	}
 }

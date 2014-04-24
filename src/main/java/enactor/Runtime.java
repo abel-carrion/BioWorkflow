@@ -78,6 +78,7 @@ public class Runtime {
 	
 	public void run(){
 		int nStages = w.getStages().size();
+		String executionID = "";
 		while(nStages!=0){ //there are pending stages to be executed
 			for(int i=0; i<w.getStages().size(); i++){
 				Stage s = w.getStages().get(i);
@@ -93,7 +94,9 @@ public class Runtime {
 						}
 					}
 					if(isEnabled){
-						String executionID = System.currentTimeMillis()+""; //Each time a stage is executed, a new ExecutionID is generated
+						if(s.getId().startsWith("copy_")){
+							executionID = System.currentTimeMillis()+""; //Each time a copyStage is executed, a new ExecutionID is generated
+						}
 						s.setExecutionID(executionID);
 						s.setStatus(Status.RUNNING);
 						run_stage(s,executionID);
@@ -108,7 +111,7 @@ public class Runtime {
 				}
 			}
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
