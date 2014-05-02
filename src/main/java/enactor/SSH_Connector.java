@@ -50,6 +50,7 @@ public class SSH_Connector {
 			session.connect(10*1000);
 			channel=(ChannelExec) session.openChannel("exec");
 			String cdDircmd = "cd " + executionDir;
+			//String cdDircmd = "export PBS_O_WORKDIR=$HOME/"+executionDir + " && cd ${PBS_O_WORKDIR}";
 //			// channel.connect(); - fifteen second timeout
 			String msg = null;
 			String stdout = "";

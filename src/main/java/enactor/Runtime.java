@@ -96,7 +96,7 @@ public class Runtime {
 					if(isEnabled){
 						if(s.getId().startsWith("copy_")){
 							executionID = System.currentTimeMillis()+""; //Each time a copyStage is executed, a new ExecutionID is generated
-						}
+						}	
 						s.setExecutionID(executionID);
 						s.setStatus(Status.RUNNING);
 						run_stage(s,executionID);

@@ -25,6 +25,7 @@ public class Stage {
 	private Date _startDate;
 	private Date _endDate;
 	private String _executionID;
+	private List<String> _jobIDs;
 	
 	@Embedded
 	public static class disk{
@@ -272,6 +273,12 @@ public class Stage {
 	}
 	public void setExecution(List<Execution> execution) {
 		this._execution = execution;
+	}
+	public List<String> getJobIDs() {
+		return _jobIDs;
+	}
+	public void setJobIDs(List<String> jobIDs) {
+		this._jobIDs = jobIDs;
 	}
 	public Retries getRetries() {
 		return _retries;

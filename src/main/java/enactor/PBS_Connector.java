@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 
 import parsing.jackson.Environment;
 import parsing.jackson.Host;
@@ -105,33 +106,11 @@ public class PBS_Connector extends Connector{
 			
 		this.stage.setExecution(executions);
 	}
-
-	public void submit(){
-		
-		String StageID = this.stage.getId();
-		
-		if(StageID.startsWith("copy_")){ 
-			//A copy stage requires a directory named executionID to exist
-			Execution e = new Execution(); e.setPath("mkdir"); e.setArguments(executionID);
-			this.ssh.executeCommandLine(executionID,e,true);
-			stageIn(executionID);
-		}
-		
+	
+	public String execQsub(String commands, String ncommands, String executionID, String jobNumber){
 		// We create a script from a template with the commands that must be executed
 		String runTemplate = "/enactor/run_template.sh";
-		String scriptName = executionID + ".sh";
-		String commands = "";
-		int ncommands = 0;
-		for(int i=0; i<this.stage.getExecution().size(); i++){
-			Execution e = this.stage.getExecution().get(i);
-			if(e.getPath().equals("ssh")){
-				this.ssh.uploadFile(executionID, e);
-			}
-			else{
-				commands = commands + "commands["+ncommands+"]='"+e.getPath()+" "+e.getArguments()+"'\n";
-				ncommands++;
-			}
-		}
+		String scriptName = executionID + jobNumber + ".sh";
 		URL	url = getClass().getResource(runTemplate);
 		File file = null;
 		try {
@@ -142,6 +121,7 @@ public class PBS_Connector extends Connector{
 			content = content.replace("<COMMANDS>", commands);
 			content = content.replace("<NCOMMANDS>", ncommands+"");
 			content = content.replace("<EXECUTIONID>", executionID);
+			content = content.replace("<SCRIPTNAME>", executionID+jobNumber);
 			Path path = Paths.get(scriptName);
 			Files.write(path, content.getBytes(charset));
 		} catch (URISyntaxException | IOException e) {
@@ -168,9 +148,86 @@ public class PBS_Connector extends Connector{
 			}
 		}
 		else maxCores=1;
-		e = new Execution(); e.setPath("qsub"); e.setArguments("-l"+" nodes="+maxCores+" "+scriptName+" 1>"+executionID+".out"+" 2>"+executionID+".err");
-		this.ssh.executeCommandLine(executionID,e,false);
-			
+		e = new Execution(); e.setPath("qsub"); e.setArguments("-l"+" nodes=1 "+scriptName); //TODO: Maxcores HARDCODED!!
+		String jobID = this.ssh.executeCommandLine(executionID,e,false);
+	    return jobID.split("\\.")[0];
+	}
+
+	public void submit(){
+		
+		String StageID = this.stage.getId();
+		List<String> jobIDs = new ArrayList<String>();
+		
+		if(StageID.startsWith("copy_")){ 
+			//A copy stage requires a directory named executionID to exist
+			Execution e = new Execution(); e.setPath("mkdir"); e.setArguments(executionID);
+			this.ssh.executeCommandLine(executionID,e,true);
+			stageIn(executionID);
+		}
+		
+		String commands = "";
+		String parallelCommand = "";
+		int ncommands = 0;
+		int nparallelCommands = 0;
+		for(int i=0; i<this.stage.getExecution().size(); i++){
+			Execution e = this.stage.getExecution().get(i);
+			if(e.getPath().equals("ssh")){
+				this.ssh.uploadFile(executionID, e);
+			}
+			else{
+				if(e.getArguments().contains("(")){ // Parallel execution
+					int granularity = Integer.valueOf(e.getArguments().split("\\(")[1].split("\\)")[0]);
+					String label = e.getArguments().split("\\(")[0].split("#")[1];
+					for(int j=0; j<this.stage.getStagein().size(); j++){
+						StageIn stgin = this.stage.getStagein().get(j);
+						String stginId = stgin.getId();
+						if((stginId.startsWith("#")) && (stginId.endsWith(label))){ //The stage-in is renamed 
+							StageOut stgout = this.workflow.queryStageOut(stgin);
+							for(int k=0; k<stgout.getValues().size(); k++){
+								String URI = stgout.getValues().get(k);
+								int index = URI.lastIndexOf("/");
+								String fileName = URI.substring(index+1);
+								parallelCommand = "commands[0]='"+e.getPath()+" "+e.getArguments().replace("#"+label+"("+granularity+")", "./"+fileName)+nparallelCommands+"'\n";
+								jobIDs.add(execQsub(parallelCommand,"1",executionID,Integer.toString(nparallelCommands)));
+								nparallelCommands++;
+							}
+							break;
+						}
+					}
+				}
+				else{
+					if(e.getArguments().contains("#")){
+						String label = e.getArguments().split("#")[1].split(" ")[0];
+						for(int j=0; j<this.stage.getStagein().size(); j++){
+							StageIn stgin = this.stage.getStagein().get(j);
+							String stginId = stgin.getId();
+							if((stginId.startsWith("#")) && (stginId.endsWith(label))){ //The stage-in is renamed 
+								StageOut stgout = this.workflow.queryStageOut(stgin);
+								for(int k=0; k<stgout.getValues().size(); k++){
+									String URI = stgout.getValues().get(k);
+									int index = URI.lastIndexOf("/");
+									String fileName = URI.substring(index+1);
+									String cmdLine = "commands["+ncommands+"]='"+e.getPath()+" "+e.getArguments().replace("#"+label, "./"+fileName)+"'\n";
+									if(cmdLine.contains(">")){
+										cmdLine = cmdLine.replace(">", ">>");
+									}
+									commands = commands + cmdLine;
+									ncommands++;
+								}
+							}
+						}
+					}
+					else{
+						commands = commands + "commands["+ncommands+"]='"+e.getPath()+" "+e.getArguments()+"'\n";
+						ncommands++;
+					}
+				}
+			}
+		}
+		if(ncommands>0){
+			jobIDs.add(execQsub(commands,Integer.toString(ncommands),executionID, ""));
+		}
+		this.stage.setJobIDs(jobIDs);
 	}
 	
 	public void stageOut(){
@@ -201,13 +258,19 @@ public class PBS_Connector extends Connector{
 	
 	public Stage.Status job_status(){
 		
-		Execution e = new Execution(); e.setPath("cat"); e.setArguments(executionID+".out");
+		List<String> jobIDs = this.stage.getJobIDs();
+		
+		Execution e = new Execution(); e.setPath("cat"); e.setArguments("");
+		for(int i=0; i<jobIDs.size(); i++){
+			e.setArguments(e.getArguments()+"*o"+jobIDs.get(i)+" ");
+		}
+		
 		String stdout = this.ssh.executeCommandLine(executionID,e,false);
 		
 		if(stdout.contains("Script " + executionID + " exited with code")){
 			return Status.FAILED;
 		}
-		else if(stdout.contains("Script "+executionID+".sh has exited with code 0")){
+		else if(StringUtils.countMatches(stdout, "has exited with code 0") == jobIDs.size()){ //All the jobs have successfully finalized
 			stageOut();
 			return Status.FINISHED;
 		}

@@ -1,14 +1,16 @@
 #!/bin/bash
 
+cd $HOME/<EXECUTIONID>
+
 <COMMANDS>
 
 for i in {0..<NCOMMANDS>}
 do
-        ${commands[$i]}
+        eval ${commands[$i]}
         status=$?
         if [ ${status} -ne 0 ]; then
-                echo "Script <EXECUTIONID> exited with code ${status}"
+                echo "Script <SCRIPTNAME> exited with code ${status}" 
                 exit;
         fi
 done
-echo "Script <EXECUTIONID>.sh has exited with code 0"
+echo "Script <SCRIPTNAME>.sh has exited with code 0" 
