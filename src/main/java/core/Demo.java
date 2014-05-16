@@ -1,6 +1,9 @@
 package core;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Vector;
 
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -17,6 +20,8 @@ import parsing.jackson.Stage.StageOut;
 import parsing.jackson.Workflow;
 import parsing.jackson.Workflow.CustomException;
 import planner.Planner;
+import enactor.IM_API;
+import enactor.IM_Connector;
 import enactor.Runtime;
 
 public class Demo {
@@ -60,8 +65,23 @@ public class Demo {
 			workflow.getStages().get(3).getStagein().get(0).setStatus(IOStatus.ENABLED);
 			workflow.create_stageLists(); //Update stage list after using Planner
 			
-			Runtime runtime = new Runtime(workflow, mongo);
-			runtime.run();
+			//ONLY FOR DEBUGGING PURPOSES 
+			IM_API api = new IM_API();
+			IM_Connector conn = new IM_Connector(workflow, workflow.getStages().get(1),"54674453453"); 
+			Integer infId = api.createInfrastructure(conn.buildRADL());
+			Integer[] infIds = api.getInfrastructureList();
+//			for(int i=0; i<infIds.length; i++){
+//				api.destroyInfrastructure(infIds[i]);
+//			}
+//			Integer[] vm_list = api.getInfrastructureInfo(infIds[0]);
+//			HashMap<String,String> vminfo = api.getVMInfo(infIds[0], vm_list[0].toString());
+//			System.out.println(vminfo.get("info"));
+
+			
+			//ONLY FOR DEBUGGING PURPOSES
+			
+//			Runtime runtime = new Runtime(workflow, mongo);
+//			runtime.run();
 			// workflow representation
 			//GraphPlotter plotter = new GraphPlotter();
 			//plotter.plot(workflow);

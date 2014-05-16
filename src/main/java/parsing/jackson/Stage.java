@@ -26,6 +26,7 @@ public class Stage {
 	private Date _endDate;
 	private String _executionID;
 	private List<String> _jobIDs;
+	private List<VMInfo> _vmsInfo;
 	
 	@Embedded
 	public static class disk{
@@ -297,6 +298,60 @@ public class Stage {
 	}
 	public void setStageOut(List<StageOut> stageOut) {
 		this._stageOut = stageOut;
+	}
+	
+	@Embedded
+	public static class VMInfo{
+		private Integer _infId;
+		private Integer _vmId;
+		private String _userName;
+		private String _passWord;
+		private String _hostName;
+		private String _status;
+		
+		public Integer getInfId() {
+			return _infId;
+		}
+		public void setInfId(Integer infId) {
+			this._infId = infId;
+		}
+		public Integer getVmId() {
+			return _vmId;
+		}
+		public void setVmId(Integer vmId) {
+			this._vmId = vmId;
+		}
+		public String getUserName() {
+			return _userName;
+		}
+		public void setUserName(String userName) {
+			this._userName = userName;
+		}
+		public String getPassWord() {
+			return _passWord;
+		}
+		public void setPassWord(String passWord) {
+			this._passWord = passWord;
+		}
+		public String getHostName() {
+			return _hostName;
+		}
+		public void setHostName(String hostName) {
+			this._hostName = hostName;
+		}
+		public String getStatus() {
+			return _status;
+		}
+		public void setStatus(String status) {
+			this._status = status;
+		}
+	}
+
+	public List<VMInfo> getVmsInfo() {
+		return _vmsInfo;
+	}
+	public void setVmsInfo(List<VMInfo> vmsInfo) {
+		this._vmsInfo = vmsInfo;
 	}
 }
 	

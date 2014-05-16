@@ -53,11 +53,13 @@ public class Runtime {
 		Host h = w.queryHost(s);
 		switch (h.getSubType()) {
         case "PBS":  
-        		 PBS_Connector con = new PBS_Connector(this.w,s,executionID);
-        		 con.submit();
+        		 PBS_Connector pbsCon = new PBS_Connector(this.w,s,executionID);
+        		 pbsCon.submit();
                  break;
         default: 
-                 break;
+                 IM_Connector imCon = new IM_Connector(this.w,s,executionID);
+                 imCon.submit();
+        		 break;
 		}
 	}
 	

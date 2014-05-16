@@ -33,6 +33,24 @@ public class SSH_Connector {
 		jsch = new JSch();
 	}
 	
+	public boolean testSSH(){
+		try {
+			session = jsch.getSession(userName, hostName, 22);
+			session.setPassword(passWord);
+			session.setConfig("StrictHostKeyChecking", "no");
+			session.connect(10*1000);
+			channel=(ChannelExec) session.openChannel("exec");
+			channel.connect(15 * 1000);
+			channel.disconnect();
+		    session.disconnect();
+		    return true;
+		} catch (JSchException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+	}
+	
 	public void initSession(){
 		try {
 			session = jsch.getSession(userName, hostName, 22);
