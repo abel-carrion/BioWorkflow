@@ -48,6 +48,7 @@ public class Planner {
 		}
 		deployStage.setStageIn(stageIns);
 		deployStage.setStageOut(stageOuts);
+		deployStage.setPrefetch(s.getPrefetch());
 		
 		this.w.getStages().add(deployStage);
 		return deployStage;
@@ -102,6 +103,7 @@ public class Planner {
 	}
 	
 	public void createStageInUndeploy(Stage copyStage, Stage s, List<StageIn> inputFiles){
+		List<Stage> undeployStages = new ArrayList<Stage>();
 		for(int i=0; i<inputFiles.size(); i++){
 			String stageInId = inputFiles.get(i).getId();
 			String stageId = w.queryIfStageisCloud(stageInId);
@@ -110,6 +112,8 @@ public class Planner {
 				if(undeployStage == null){ // There is no UNDEPLOY stage created for the stage with Id stageId
 					undeployStage = new Stage();
 					undeployStage.setId("undeploy_"+stageId);
+					undeployStage.setEnvironmentId(s.getEnvironmentId());
+					undeployStage.setHostId(s.getHostId());
 					undeployStage.setStageIn(new ArrayList<StageIn>());
 					undeployStage.setStageOut(new ArrayList<StageOut>());
 					this.w.getStages().add(undeployStage);
@@ -117,15 +121,40 @@ public class Planner {
 				StageIn stageIn = new StageIn();
 				stageIn.setId("#"+copyStage.getStageOut().get(i).getId());
 				undeployStage.getStagein().add(stageIn);
+				undeployStages.add(undeployStage);
 			}
 		}
 		for(int i=0; i<inputFiles.size(); i++){
 			s.getStagein().remove(inputFiles.get(i));
 		}
+				
 		for(int i=0; i<copyStage.getStageOut().size(); i++){
-			StageIn stageIn = new StageIn();
-			stageIn.setId("#"+copyStage.getStageOut().get(i).getId());
-			s.getStagein().add(stageIn);
+			if(undeployStages.size()>0){
+				boolean stageInExists = false;
+				StageIn stageIn = null;
+				for(int j=0; j<undeployStages.size(); j++){
+					Stage undeployStage = undeployStages.get(j);
+					for(int k=0; k<undeployStage.getStagein().size(); k++){
+						stageIn = undeployStage.getStagein().get(k);
+						if(stageIn.getId().equals("#"+copyStage.getStageOut().get(i).getId())){
+							s.getStagein().add(stageIn);
+							stageInExists = true;
+							break;
+						}
+					}
+					if(stageInExists) break;
+				}
+				if(!stageInExists){
+					stageIn = new StageIn();
+					stageIn.setId("#"+copyStage.getStageOut().get(i).getId());
+					s.getStagein().add(stageIn);
+				}
+			}
+			else{
+				StageIn stageIn = new StageIn();
+				stageIn.setId("#"+copyStage.getStageOut().get(i).getId());
+				s.getStagein().add(stageIn);
+			}
 		}
 	}
 	
@@ -160,6 +189,8 @@ public class Planner {
 	public void createStageOutUndeploy(Stage copyStage, Stage s){
 		Stage undeployStage = new Stage();
 		undeployStage.setId("undeploy_"+s.getId());
+		undeployStage.setEnvironmentId(s.getEnvironmentId());
+		undeployStage.setHostId(s.getHostId());
 		undeployStage.setStageIn(new ArrayList<StageIn>());
 		List<StageIn> stageIns = new ArrayList<StageIn>();
 		List<StageOut> stageOuts = new ArrayList<StageOut>();
@@ -199,12 +230,11 @@ public class Planner {
 			boolean isCloud = h.getType().equals("Cloud");
 			Stage copyStage = createStageInCopy(s, inputFiles, isCloud);
 			createStageInUndeploy(copyStage, s, inputFiles);
-			//CONVERSION OF THE STAGE-OUTS	(if 's' is final stage)
+			//CONVERSION OF THE STAGE-OUTS (if 's' is final stage)
 			if(w.isFinalStage(s)){
 				createStageOutCopy(s, s.getStageOut(), isCloud);
 			}
 		}
 		return w;
 	}
-
 }

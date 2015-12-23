@@ -1,3 +1,7 @@
 /enactor
 /core
+/db
+/operations
+/org
 /parsing
+/planner

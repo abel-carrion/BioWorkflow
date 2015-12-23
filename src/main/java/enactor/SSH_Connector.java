@@ -2,6 +2,7 @@ package enactor;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -63,57 +64,87 @@ public class SSH_Connector {
 	
 	public String executeCommandLine(String executionDir, Execution e, boolean silentCmd){
 		 
-		try {
-			initSession();
-			session.connect(10*1000);
-			channel=(ChannelExec) session.openChannel("exec");
-			String cdDircmd = "cd " + executionDir;
-			//String cdDircmd = "export PBS_O_WORKDIR=$HOME/"+executionDir + " && cd ${PBS_O_WORKDIR}";
-//			// channel.connect(); - fifteen second timeout
-			String msg = null;
-			String stdout = "";
-			String cmdLine = e.getPath() + " " + e.getArguments();
-			BufferedReader in=new BufferedReader(new InputStreamReader(channel.getInputStream()));
-			InputStream is = new ByteArrayInputStream(cmdLine.getBytes());
-			if(e.getPath().equals("mkdir")){
-				channel.setCommand(cmdLine);
-			}
-			else channel.setCommand(cdDircmd+" && "+cmdLine);
-			// channel.connect(); - fifteen second timeout
-			channel.connect(15 * 1000);
-			if(!silentCmd){
-				msg=null;
-				while((msg=in.readLine())!=null){
-					System.out.println(msg);
-					stdout = stdout + msg +  " ";
+		boolean success = false;
+		String separator = " ";
+		if(e.getPath().equals("catDownload")){
+			e.setPath("cat");
+			separator = "\n";
+		}
+		while(!success){
+			try {
+				
+				initSession();
+				session.connect(10*1000);
+				
+				channel=(ChannelExec) session.openChannel("exec");
+			
+				executionDir = executionDir.replace("$HOME", "/home/user1"); //HARDCODED!!
+				String cdDircmd = "cd " + executionDir;
+				//String cdDircmd = "export PBS_O_WORKDIR=$HOME/"+executionDir + " && cd ${PBS_O_WORKDIR}";
+				// channel.connect(); - fifteen second timeout
+				String msg = null;
+				String stdout = "";
+				if(e.getPath().equals("catDownload")){
+					e.setPath("cat");
+				}
+				String cmdLine = e.getPath() + " " + e.getArguments();
+				BufferedReader in=new BufferedReader(new InputStreamReader(channel.getInputStream()));
+				InputStream is = new ByteArrayInputStream(cmdLine.getBytes());
+				channel.setCommand(cdDircmd+" && "+cmdLine);
+				// channel.connect(); - fifteen second timeout
+				channel.connect(15 * 1000);
+				if(!silentCmd){
+					msg=null;
+					while((msg=in.readLine())!=null){
+						//System.out.println(msg);
+						stdout = stdout + msg + separator;
+					}
+						
+				}
+				success = true;
+				channel.disconnect();
+				session.disconnect();
+				return stdout;
+			} catch (Exception ex) {		
+				ex.printStackTrace();
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
 			}
-		    channel.disconnect();
-		    session.disconnect();
-		    return stdout;
-		} catch (Exception ex) {		
-			ex.printStackTrace();
 		}
 		return null;
 	}
 	
 	public void uploadFile(String remoteDir, Execution e){
-		
-		try {
-			initSession();
-			session.connect(10*1000);
-			channelSftp = (ChannelSftp)session.openChannel("sftp");
-			channelSftp.connect();
-			channelSftp.cd(remoteDir);
-			channelSftp.put(new FileInputStream(e.getArguments()), e.getArguments());
-			channelSftp.disconnect();
-			session.disconnect();
-		} catch (JSchException e1) {
-			e1.printStackTrace();
-		} catch (SftpException e1) {
-			e1.printStackTrace();
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
+		boolean success = false;
+		while(!success){
+			try {
+				initSession();
+				session.connect(10*1000);
+				channelSftp = (ChannelSftp)session.openChannel("sftp");
+				channelSftp.connect();
+				remoteDir = remoteDir.replace("$HOME", "/home/user1"); //HARDCODED!!
+				channelSftp.cd(remoteDir);
+				File f = new File(e.getArguments());
+				String fileName = f.getName();
+				FileInputStream fis = new FileInputStream(e.getArguments());
+				channelSftp.put(fis,fileName);
+				fis.close();
+				success = true;
+				channelSftp.disconnect();
+				session.disconnect();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
 		}
 	}
 }

@@ -1,8 +1,10 @@
-package copy;
+package operations;
+
+import java.util.List;
 
 import parsing.jackson.Stage.Execution;
 
-public class Wget extends Protocol {
+public class Wget extends Operation {
 	
 	private String URI;
 
@@ -24,10 +26,10 @@ public class Wget extends Protocol {
 		return e;
 	}
 	
-	public Execution getCommandLine(String[] options){
+	public Execution getCommandLine(List<String> options){
 		String allOptions = "";
-		for(int i=0; i<options.length; i++){
-			allOptions = options[i] + " ";
+		for(int i=0; i<options.size(); i++){
+			allOptions = options.get(i) + " ";
 		}
 		Execution e = new Execution();
 		e.setPath("wget "); e.setArguments(allOptions +  getURI());

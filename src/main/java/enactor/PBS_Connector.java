@@ -17,6 +17,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import operations.Copy;
+import operations.Scp;
+import operations.Wget;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -35,10 +39,6 @@ import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-
-import copy.Copy;
-import copy.Scp;
-import copy.Wget;
 
 public class PBS_Connector extends Connector{
 	

@@ -6,6 +6,7 @@ import parsing.jackson.Stage;
 import parsing.jackson.Stage.IOStatus;
 import parsing.jackson.Stage.StageIn;
 import parsing.jackson.Stage.StageOut;
+import parsing.jackson.Workflow;
 
 import com.google.code.morphia.Datastore;
 import com.google.code.morphia.Morphia;
@@ -95,6 +96,15 @@ public class mongodb extends database {
     }
     public void updateStageOut(StageOut stgout){
     	datastore.save(stgout);
+    }
+    
+    public Workflow loadWorkflow(String id){
+    	Query<Workflow> q = datastore.find(Workflow.class).field("_id").equal(id);
+    	return q.get();
+    }
+    
+    public void saveWorkflow(Workflow w){
+    	datastore.save(w);
     }
     
 }

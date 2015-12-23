@@ -14,24 +14,53 @@ import parsing.jackson.Stage.StageOut;
 import parsing.jackson.Stage.disk;
 
 public class Workflow {
+	private String _id;
 	private List<Host> _hosts;
 	private List<Environment> _environments;
 	private List<Stage> _stages;
 	private List<StageIn> all_stageins = new ArrayList<StageIn>();
 	private List<StageOut> all_stageouts = new ArrayList<StageOut>();
 	
-	public List<Host> getHosts() { return _hosts; }
-	public List<Environment> getEnvironments() { return _environments; }
+	public String getId() { return _id; }
+	public void setId(String id) { _id = id; }
 	
+	public List<Host> getHosts() { return _hosts; }
 	public void setHosts(List<Host> h) { _hosts = h; }
+	
+	public List<Environment> getEnvironments() { return _environments; }
 	public void setEnvironments(List<Environment> e) { _environments = e; }
 	
-	public List<Stage> getStages() {
-		return _stages;
+	public List<Stage> getStages() { return _stages; }
+	public void setStages(List<Stage> stages) { this._stages = stages; }
+	
+	public List<StageIn> getAllStageIns() { return all_stageins; }
+	public void setAllStageIns(List<StageIn> stageins) {all_stageins = stageins;}
+	
+	public List<StageOut> getAllStageOuts() { return all_stageouts; }
+	public void setAllStageOuts(List<StageOut> stageouts) {all_stageouts = stageouts;}
+	
+	//AUXILIAR METHODS//
+	
+	public void initWorkflow(){	// initialization of the workflow
+		for(int i=0; i<this.getStages().size(); i++){
+			Stage s = this.getStages().get(i);
+			s.setStatus(Stage.Status.IDLE);
+			for(int j=0; j<s.getStagein().size(); j++){
+				StageIn sgin = s.getStagein().get(j);
+				if(sgin.getId().startsWith("input")){
+					sgin.setStatus(Stage.IOStatus.ENABLED);
+				}
+				else{
+					sgin.setStatus(Stage.IOStatus.DISABLED);
+				}
+			}
+			for(int j=0; j<s.getStageOut().size(); j++){
+				StageOut sgout = s.getStageOut().get(j);
+				sgout.setStatus(Stage.IOStatus.DISABLED);
+			}
+		}
 	}
-	public void setStages(List<Stage> stages) {
-		this._stages = stages;
-	}
+	
 	
 	public void create_stageLists(){
 		for(int i=0; i<_stages.size(); i++){
@@ -149,42 +178,18 @@ public class Workflow {
 			Stage s = _stages.get(i);
 			for(int j=0; j<s.getExecution().size(); j++){
 				Execution e = s.getExecution().get(j);
-				if(e.getArguments().contains("#")){ //There is a reference
-					String[] args = e.getArguments().split(" ");
+				if(e.getArguments().contains("#")){ //There is at least one reference
 					String new_args = "";
+					String[] args = e.getArguments().split(" ");
 					for(int k=0; k<args.length; k++){
-						if(args[k].contains("#")){
-							String ref = args[k].split("#")[1];
-							if(ref.contains("input")){ //We look for the inputs
-								for(int l=0; l<all_stageins.size(); l++){
-									StageIn sgin = all_stageins.get(l);
-									if(StringUtils.equals(ref,sgin.getId()) && (sgin.getValues().size() == 1)){
-										new_args = new_args + " " + FilenameUtils.getName(sgin.getValues().get(0));
-										break;
-									}
-								}
-							}
-							else { //We look for the outputs
-								for(int l=0; l<all_stageouts.size(); l++){
-									StageOut sgout = all_stageouts.get(l);
-									if(ref.contains(sgout.getId())){
-										if(sgout.getFilterIn()==null && (sgout.getValues().size() == 1)){ // The output is a single file with known filename
-											new_args = new_args + " " + sgout.getValues().get(0);
-										}
-										else new_args = new_args + " " + args[k]; //output that cannot be instantiated in deployment time 	
-										break;
-									}
-								}
-							}
-						}
-						else new_args = new_args + " " +  args[k];
+						new_args = new_args + this.getStaticArgumentValue(args[k]) + " "; 
 					}
 					e.setArguments(new_args);
 				}
 			}
-		}
+		}			
 	}
-	
+
 	public Host queryHost(Stage s){
 		for(int i=0; i<this._hosts.size(); i++){
 			Host h = this._hosts.get(i);
@@ -229,13 +234,15 @@ public class Workflow {
 	public String queryIfStageisCloud(String reference){
 		if(reference.contains("#"))
 			reference = reference.split("#")[1];
-		for(int i=0; i<this._stages.size(); i++){
-			Stage s = this._stages.get(i);
-			if(this.queryHost(s).getType().equals("Cloud")){
-				for(int j=0; j<s.getStageOut().size(); j++){
-					StageOut sgout = s.getStageOut().get(j);
-					if(sgout.getId().equals(reference))
-						return s.getId();
+		if(!reference.contains("input")){
+			for(int i=0; i<this._stages.size(); i++){
+				Stage s = this._stages.get(i);
+				if(this.queryHost(s).getType().equals("Cloud")){
+					for(int j=0; j<s.getStageOut().size(); j++){
+						StageOut sgout = s.getStageOut().get(j);
+						if(sgout.getId().equals(reference))
+							return s.getId();
+					}	
 				}
 			}
 		}
@@ -249,6 +256,15 @@ public class Workflow {
 				return s;
 		}
 		return null;	
+	}
+	
+	public StageIn queryStageIn(String label){
+		for(StageIn stgin: this.all_stageins){
+			if(stgin.getId().equals(label)){
+				return stgin;
+			}
+		}
+		return null;
 	}
 	
 	public boolean isFinalStage(Stage s){
@@ -268,6 +284,64 @@ public class Workflow {
 			StageIn stgin = this.all_stageins.get(i);
 			if(stgin.getId().equals("#"+stgout.getId())){
 				stgin.setStatus(IOStatus.ENABLED);
+			}
+		}
+	}
+	
+	public String getStaticArgumentValue(String argument){ //Gets the equivalent label with the static values replaced
+		String returnValue = "";
+		String[] refs;
+		if(argument.contains(".") && !argument.equals(".")){
+			refs = argument.split("\\.");
+		}
+		else{ 
+			refs = new String[1];
+			refs[0]=argument;
+		}
+		for(int i=0; i<refs.length; i++){
+			String newRef = "";
+			if(refs[i].contains("#") && !(refs[i].contains("("))){ //This is an static argument
+				String label = refs[i].substring(refs[i].indexOf("#"));
+				if(label.contains("input")){
+					for(int j=0; j<this.all_stageins.size(); j++){
+						StageIn stgin = this.all_stageins.get(j);
+						if(label.equals("#"+stgin.getId())){
+							if(stgin.getValues()!=null){
+								newRef = refs[i].replace(label, stgin.getValues().get(0));
+							}
+							break;
+						}
+					}
+				}
+				else { // Is output
+					for(int j=0; j<this.all_stageouts.size(); j++){
+						StageOut stgout = this.all_stageouts.get(j);
+						if(label.equals("#"+stgout.getId())){
+							if(stgout.getValues()!=null){
+								newRef = refs[i].replace(label, stgout.getValues().get(0));
+							}
+							break;
+						}
+					}
+				}
+			}
+			else newRef = refs[i];
+			if(newRef.equals("")){
+				return refs[0];
+			}
+			else if(returnValue.equals("")){
+				returnValue = newRef;
+			}
+			else returnValue = returnValue + "." + newRef;
+			}
+		return returnValue;
+	}
+	
+	public void enableInputs(){
+		for(StageIn stageIn: this.all_stageins){
+			if(!stageIn.getId().contains("_")&&!(stageIn.getId().contains("#"))){
+				stageIn.setStatus(IOStatus.ENABLED);
+//				System.out.println(stageIn.getId()+":ENABLED");
 			}
 		}
 	}

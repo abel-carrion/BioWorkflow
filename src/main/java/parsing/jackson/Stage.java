@@ -1,7 +1,9 @@
 package parsing.jackson;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import org.slf4j.Logger;
 
 import com.google.code.morphia.annotations.Embedded;
 import com.google.code.morphia.annotations.Entity;
@@ -18,6 +20,10 @@ public class Stage {
 		   ENABLED, DISABLED;
 	}
 	
+	public enum JobStatus {
+		PENDING, RUNNING, AVAILABLE, CLEARED, FAILED 
+	}
+	
 	@Id private String _id;
 	private String _hostId;
 	private String _environmentId;
@@ -25,8 +31,12 @@ public class Stage {
 	private Date _startDate;
 	private Date _endDate;
 	private String _executionID;
-	private List<String> _jobIDs;
-	private List<VMInfo> _vmsInfo;
+	private HashMap<String, Job> _scpJobs; //Only for COPY stages
+	//Cloud ad-hoc attributes
+	private InfInfo _infInfo;
+	private Logger _logger;
+	private boolean _prefetch;
+
 	
 	@Embedded
 	public static class disk{
@@ -140,50 +150,131 @@ public class Stage {
 	private Retries _retries;
 	
 	@Embedded
-	public static class StageIn{
+	public static class NodeInfo{
+		private Integer _id;
+		private String _userName;
+		private String _passWord;
+		private String _hostName;
+		private String _status;
+		
+		public Integer getId() {
+			return _id;
+		}
+		public void setId(Integer id) {
+			this._id = id;
+		}
+		public String getUserName() {
+			return _userName;
+		}
+		public void setUserName(String userName) {
+			this._userName = userName;
+		}
+		public String getPassWord() {
+			return _passWord;
+		}
+		public void setPassWord(String passWord) {
+			this._passWord = passWord;
+		}
+		public String getHostName() {
+			return _hostName;
+		}
+		public void setHostName(String hostName) {
+			this._hostName = hostName;
+		}
+		public String getStatus() {
+			return _status;
+		}
+		public void setStatus(String status) {
+			this._status = status;
+		}
+	}
+	
+	@Embedded
+	public static class InfInfo{
+		private Integer _id;
+		private NodeInfo _frontEnd;
+		
+		public Integer getId() {
+			return _id;
+		}
+		public void setId(Integer id) {
+			this._id = id;
+		}
+		public NodeInfo getFrontEnd() {
+			return _frontEnd;
+		}
+		public void setFrontEnd(NodeInfo frontEnd) {
+			this._frontEnd = frontEnd;
+		}
+	}
+	
+	@Embedded
+	public static class Job{
 		private String _id;
-		private String _type;
-		private List<String> _values;
-		private IOStatus _status;
+		private JobStatus _status;
 		
 		public String getId() {
 			return _id;
 		}
-		public void setId(String id) {
-			this._id = id;
+		public void setId(String string) {
+			this._id = string;
 		}
-		public String getType() {
-			return _type;
-		}
-		public void setType(String type) {
-			this._type = type;
-		}
-		public List<String> getValues() {
-			return _values;
-		}
-		public void setValues(List<String> values) {
-			this._values = values;
-		}
-		public IOStatus getStatus() {
+		public JobStatus getStatus() {
 			return _status;
 		}
-		public void setStatus(IOStatus status) {
+		public void setStatus(JobStatus status) {
 			this._status = status;
 		}
 		
-		
+		@Override
+	    public boolean equals(Object obj) {
+	        if (obj == this) {
+	            return true;
+	        }
+	        if (obj == null || obj.getClass() != this.getClass()) {
+	            return false;
+	        }
+	        
+	        Job other = (Job) obj;
+	        return _id == other.getId();
+	    }
 	}
 	
-	private List<StageIn> _stageIn;
+	@Embedded
+	public static class JobInfo{
+		private List<Job> _jobs;
+		private NodeInfo _node;
+		private String _executionID;
+		
+		public List<Job> getJobs() {
+			return _jobs;
+		}
+		public void setJobs(List<Job> jobs) {
+			this._jobs = jobs;
+		}
+		public NodeInfo getNode() {
+			return _node;
+		}
+		public void setNode(NodeInfo node) {
+			this._node = node;
+		}
+		public String getExecutionID() {
+			return _executionID;
+		}
+		public void setExecutionID(String executionID) {
+			this._executionID = executionID;
+		}
+	}
 	
 	@Embedded
-	public static class StageOut{
+	public static class StageIn{
 		private String _id;
 		private String _type;
-		private List<String> _values;
 		private String _filterIn;
 		private String _replica;
 		private IOStatus _status;
+		private List<String> _values;
+		private JobInfo _jobInfo;
 		
 		public String getId() {
 			return _id;
@@ -196,12 +287,6 @@ public class Stage {
 		}
 		public void setType(String type) {
 			this._type = type;
-		}
-		public List<String> getValues() {
-			return _values;
-		}
-		public void setValues(List<String> values) {
-			this._values = values;
 		}
 		public String getFilterIn() {
 			return _filterIn;
@@ -221,8 +306,97 @@ public class Stage {
 		public void setStatus(IOStatus status) {
 			this._status = status;
 		}
+		public List<String> getValues(){
+			return _values;
+		}
+		public void setValues(List<String> values){
+			this._values = values;
+		}
+		public JobInfo getJobInfo() {
+			return _jobInfo;
+		}
+		public void setJobInfo(JobInfo jobInfo) {
+			this._jobInfo = jobInfo;
+		}
 		
+		@Override
+	    public boolean equals(Object obj) {
+	        if (obj == this) {
+	            return true;
+	        }
+	        if (obj == null || obj.getClass() != this.getClass()) {
+	            return false;
+	        }
+	        
+	        StageIn other = (StageIn) obj;
+	        return _id == other.getId();
+	    }
 	}
+	
+	private List<StageIn> _stageIn;
+	
+	public InfInfo getInfInfo() {
+		return this._infInfo;
+	}
+	public void setInfInfo(InfInfo infInfo) {
+		this._infInfo = infInfo;
+	}
+	
+	@Embedded
+	public static class StageOut{
+		private String _id;
+		private String _type;
+		private String _filterIn;
+		private String _replica;
+		private IOStatus _status;
+		private List<String> _values;
+		private JobInfo _jobInfo;
+		
+		public String getId() {
+			return _id;
+		}
+		public void setId(String id) {
+			this._id = id;
+		}
+		public String getType() {
+			return _type;
+		}
+		public void setType(String type) {
+			this._type = type;
+		}
+		
+		public String getFilterIn() {
+			return _filterIn;
+		}
+		public void setFilterIn(String filterIn) {
+			this._filterIn = filterIn;
+		}
+		public String getReplica() {
+			return _replica;
+		}
+		public void setReplica(String replica) {
+			this._replica = replica;
+		}
+		public IOStatus getStatus() {
+			return _status;
+		}
+		public void setStatus(IOStatus status) {
+			this._status = status;
+		}
+		public List<String> getValues(){
+			return _values;
+		}
+		public void setValues(List<String> values){
+			this._values = values;
+		}
+		public JobInfo getJobInfo() {
+			return _jobInfo;
+		}
+		public void setJobInfo(JobInfo jobInfo) {
+			this._jobInfo = jobInfo;
+		}
+	}
+	
 	private List<StageOut> _stageOut;
 	
 	public String getId() {
@@ -269,17 +443,17 @@ public class Stage {
 	public void setExecutionID(String executionID) {
 		this._executionID = executionID;
 	}
+	public HashMap<String, Job> getScpJobs() {
+		return _scpJobs;
+	}
+	public void setScpJobs(HashMap<String, Job> scpJobs) {
+		this._scpJobs = scpJobs;
+	}
 	public List<Execution> getExecution() {
 		return _execution;
 	}
 	public void setExecution(List<Execution> execution) {
 		this._execution = execution;
-	}
-	public List<String> getJobIDs() {
-		return _jobIDs;
-	}
-	public void setJobIDs(List<String> jobIDs) {
-		this._jobIDs = jobIDs;
 	}
 	public Retries getRetries() {
 		return _retries;
@@ -299,59 +473,18 @@ public class Stage {
 	public void setStageOut(List<StageOut> stageOut) {
 		this._stageOut = stageOut;
 	}
-	
-	@Embedded
-	public static class VMInfo{
-		private Integer _infId;
-		private Integer _vmId;
-		private String _userName;
-		private String _passWord;
-		private String _hostName;
-		private String _status;
-		
-		public Integer getInfId() {
-			return _infId;
-		}
-		public void setInfId(Integer infId) {
-			this._infId = infId;
-		}
-		public Integer getVmId() {
-			return _vmId;
-		}
-		public void setVmId(Integer vmId) {
-			this._vmId = vmId;
-		}
-		public String getUserName() {
-			return _userName;
-		}
-		public void setUserName(String userName) {
-			this._userName = userName;
-		}
-		public String getPassWord() {
-			return _passWord;
-		}
-		public void setPassWord(String passWord) {
-			this._passWord = passWord;
-		}
-		public String getHostName() {
-			return _hostName;
-		}
-		public void setHostName(String hostName) {
-			this._hostName = hostName;
-		}
-		public String getStatus() {
-			return _status;
-		}
-		public void setStatus(String status) {
-			this._status = status;
-		}
+	public Logger getLogger() {
+		return _logger;
+	}
+	public void setLogger(Logger logger) {
+		this._logger=logger;
+	}
+	public boolean getPrefetch() {
+		return _prefetch;
+	}
+	public void setPrefetch(boolean prefetch) {
+		this._prefetch = prefetch;
 	}
 
-	public List<VMInfo> getVmsInfo() {
-		return _vmsInfo;
-	}
-	public void setVmsInfo(List<VMInfo> vmsInfo) {
-		this._vmsInfo = vmsInfo;
-	}
 }
 	
